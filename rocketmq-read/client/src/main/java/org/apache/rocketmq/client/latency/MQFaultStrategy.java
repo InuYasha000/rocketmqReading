@@ -134,11 +134,11 @@ public class MQFaultStrategy {
      * 更新broker的延迟情况
      * @param brokerName brokerName
      * @param currentLatency 当前延迟的毫秒
-     * @param isolation 调用BEOKER是否报错
+     * @param isolation 调用Broker是否报错
      */
     public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation) {
         if (this.sendLatencyFaultEnable) {
-            //如果isolation为true,则传递3000，那实际上需要60000毫秒这个broker才能可用
+            //如果isolation为true,则传递30000，那实际上需要60000毫秒这个broker才能可用？？不止60000
             long duration = computeNotAvailableDuration(isolation ? 30000 : currentLatency);
             this.latencyFaultTolerance.updateFaultItem(brokerName, currentLatency, duration);
         }
