@@ -27,7 +27,7 @@ public interface LatencyFaultTolerance<T> {
      * 更新延迟容错策略
      * @param name brokerName
      * @param currentLatency 当前延迟时间
-     * @param notAvailableDuration 下次可用时间
+     * @param notAvailableDuration 不可用时长(后面会加上当前时间System.currentTimeMillis())
      */
     void updateFaultItem(final T name, final long currentLatency, final long notAvailableDuration);
 

@@ -37,9 +37,9 @@ public class MessageClientIDSetter {
     static {
         LEN = 4 + 2 + 4 + 4 + 2;
 
-        ByteBuffer tempBuffer = ByteBuffer.allocate(10);
+        ByteBuffer tempBuffer = ByteBuffer.allocate(10);//创建一个指定capacity的ByteBuffer。
         tempBuffer.position(2);
-        tempBuffer.putInt(UtilAll.getPid());
+        tempBuffer.putInt(UtilAll.getPid());// 写入一个int值到ByteBuffer中。
         tempBuffer.position(0);
         try {
             tempBuffer.put(UtilAll.getIP());

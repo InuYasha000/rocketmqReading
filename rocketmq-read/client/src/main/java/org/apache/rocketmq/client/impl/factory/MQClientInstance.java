@@ -1234,7 +1234,7 @@ public class MQClientInstance {
     }
 
     /**
-     * 从BrokerName里找到对应的Broker的地址
+     * 从BrokerName里找到对应的Broker的地址(master)
      * @param brokerName  brokerName
      * @return ;
      */

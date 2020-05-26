@@ -28,12 +28,17 @@ import org.apache.rocketmq.client.common.ThreadLocalIndex;
  * broker队列选择的容错策略选择器
  * @author ;
  */
+//延迟故障容错实现。维护每个对象的信息
 public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> {
 
     /**
      * key：brokerName,value：broker下次可用的时间，与延迟的相关记录
      */
     private final ConcurrentHashMap<String, FaultItem> faultItemTable = new ConcurrentHashMap<String, FaultItem>(16);
+    /**
+     * 对象选择Index
+     * @see #pickOneAtLeast()
+     */
     private final ThreadLocalIndex whichItemWorst = new ThreadLocalIndex();
 
     /**
@@ -42,21 +47,23 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
      * @param currentLatency 当前延迟时间
      * @param notAvailableDuration 下次可用时间
      */
+    //从faultItemTable取出，有就更新，没有就创建并加入，加入的时候再次判断
     @Override
     public void updateFaultItem(final String name, final long currentLatency, final long notAvailableDuration) {
         FaultItem old = this.faultItemTable.get(name);
         if (null == old) {
+            // 创建对象
             final FaultItem faultItem = new FaultItem(name);
             faultItem.setCurrentLatency(currentLatency);
             //设置startTimesStamp为下次可用的时间。当前时间+不可用周期
             faultItem.setStartTimestamp(System.currentTimeMillis() + notAvailableDuration);
-
+            // 更新对象
             old = this.faultItemTable.putIfAbsent(name, faultItem);
             if (old != null) {
                 old.setCurrentLatency(currentLatency);
                 old.setStartTimestamp(System.currentTimeMillis() + notAvailableDuration);
             }
-        } else {
+        } else {// 更新对象
             old.setCurrentLatency(currentLatency);
             old.setStartTimestamp(System.currentTimeMillis() + notAvailableDuration);
         }
@@ -84,11 +91,12 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
 
     /**
      * 找到一个至少可用的BrokerName
+     * 选择一个相对优秀的对象
      * @return ;
      */
     @Override
     public String pickOneAtLeast() {
-
+        // 创建数组
         final Enumeration<FaultItem> elements = this.faultItemTable.elements();
         List<FaultItem> tmpList = new LinkedList<FaultItem>();
 
@@ -102,6 +110,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
             Collections.shuffle(tmpList);
             Collections.sort(tmpList);
 
+            // 选择顺序在前一半的对象
             final int half = tmpList.size() / 2;
             if (half <= 0) {
                 return tmpList.get(0).getName();
@@ -144,6 +153,13 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
             this.name = name;
         }
 
+        /**
+         * 可用性 > 延迟 > 开始可用时间
+         * @param other
+         * @return
+         */
+        //返回1表示应该选择other
+        //-1才表示选择当前
         @Override
         public int compareTo(final FaultItem other) {
             if (this.isAvailable() != other.isAvailable()) {

@@ -88,6 +88,7 @@ public class MQFaultStrategy {
      */
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
         //如果打开了延迟容错的开关
+        //容错策略选择消息队列逻辑。优先获取可用队列，其次选择一个broker获取队列，最差返回任意broker的一个队列
         if (this.sendLatencyFaultEnable) {
             try {
 
@@ -110,6 +111,7 @@ public class MQFaultStrategy {
                 final String notBestBroker = latencyFaultTolerance.pickOneAtLeast();
                 int writeQueueNums = tpInfo.getQueueIdByBroker(notBestBroker);
                 if (writeQueueNums > 0) {
+                    //随机选取一个队列
                     final MessageQueue mq = tpInfo.selectOneMessageQueue();
                     if (notBestBroker != null) {
                         mq.setBrokerName(notBestBroker);
@@ -126,7 +128,7 @@ public class MQFaultStrategy {
 
             return tpInfo.selectOneMessageQueue();
         }
-
+        //未开启容错策略选择消息队列逻辑,随机选取，但不能选取lastBrokerName
         return tpInfo.selectOneMessageQueue(lastBrokerName);
     }
 
@@ -136,6 +138,7 @@ public class MQFaultStrategy {
      * @param currentLatency 当前延迟的毫秒
      * @param isolation 调用Broker是否报错
      */
+    //更新延迟容错信息。当 Producer 发送消息时间过长，则逻辑认为N秒内不可用。按照latencyMax，notAvailableDuration的配置
     public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation) {
         if (this.sendLatencyFaultEnable) {
             //如果isolation为true,则传递30000，那实际上需要60000毫秒这个broker才能可用？？不止60000
@@ -145,7 +148,7 @@ public class MQFaultStrategy {
     }
 
     /**
-     * 根据当前计算的延迟currentLatency，选择notAvailableDuration对应的
+     * 根据当前计算的延迟currentLatency，选择notAvailableDuration对应的不可用时间
      * @param currentLatency 当前延迟时间
      * @return ;
      */

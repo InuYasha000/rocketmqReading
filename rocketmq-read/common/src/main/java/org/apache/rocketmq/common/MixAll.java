@@ -200,6 +200,9 @@ public class MixAll {
     }
 
     /**
+     * rocke有9876
+     * 非vip通道端口:10911
+     * vip通道端口:10909
      * Broker的VIP通道，端口-2
      * @param isChange 是否改动
      * @param brokerAddr brokder地址

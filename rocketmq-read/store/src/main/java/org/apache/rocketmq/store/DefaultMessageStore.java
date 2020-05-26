@@ -411,6 +411,7 @@ public class DefaultMessageStore implements MessageStore {
 
     /**
      * 添加消息
+     * 存储消息封装，最终存储需要 CommitLog 实现。
      * @param msg Message instance to store
      * @return 返回添加消息的结果
      */
@@ -433,6 +434,7 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         //不可写，返回错误
+        // store是否允许写入
         if (!this.runningFlags.isWriteable()) {
             long value = this.printTimes.getAndIncrement();
             if ((value % 50000) == 0) {
@@ -445,12 +447,14 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         //topic的length太长
+        // 消息过长
         if (msg.getTopic().length() > Byte.MAX_VALUE) {
             log.warn("putMessage message topic length too long " + msg.getTopic().length());
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
 
         //properries太长
+        // 消息附加属性过长
         if (msg.getPropertiesString() != null && msg.getPropertiesString().length() > Short.MAX_VALUE) {
             log.warn("putMessage message properties length too long " + msg.getPropertiesString().length());
             return new PutMessageResult(PutMessageStatus.PROPERTIES_SIZE_EXCEEDED, null);
@@ -464,6 +468,7 @@ public class DefaultMessageStore implements MessageStore {
         //开始时间
         long beginTime = this.getSystemClock().now();
         //put时间
+        // 添加消息到commitLog
         PutMessageResult result = this.commitLog.putMessage(msg);
         //花费的时间
         long eclipseTime = this.getSystemClock().now() - beginTime;

@@ -178,6 +178,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         /*
          * 如果是顺序topic并且不可写
          */
+        // 检查 broker 是否有写入权限，顺序topic
         if (!PermName.isWriteable(this.brokerController.getBrokerConfig().getBrokerPermission())
             && this.brokerController.getTopicConfigManager().isOrderTopic(requestHeader.getTopic())) {
             //返回没有权限
@@ -186,6 +187,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
                 + "] sending message is forbidden");
             return response;
         }
+        // 检查topic是否可以被发送。目前是{@link MixAll.DEFAULT_TOPIC}不被允许发送
         if (!this.brokerController.getTopicConfigManager().isTopicCanSendMessage(requestHeader.getTopic())) {
             String errorMsg = "the topic[" + requestHeader.getTopic() + "] is conflict with system reserved words.";
             //和系统topic冲突了
@@ -197,7 +199,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
 
         TopicConfig topicConfig =
             this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-        if (null == topicConfig) {
+        if (null == topicConfig) {// 不存在topicConfig，则进行创建
             int topicSysFlag = 0;
             if (requestHeader.isUnitMode()) {
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
@@ -208,12 +210,13 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             }
 
             log.warn("the topic {} not exist, producer: {}", requestHeader.getTopic(), ctx.channel().remoteAddress());
+            // 创建topic配置
             topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageMethod(
                 requestHeader.getTopic(),
                 requestHeader.getDefaultTopic(),
                 RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
                 requestHeader.getDefaultTopicQueueNums(), topicSysFlag);
-
+            //当找不到Topic配置，则进行创建。当然，创建会存在不成功的情况，例如说：defaultTopic 的Topic配置不存在，又或者是 存在但是不允许继承
             if (null == topicConfig) {
                 //如果topic是重试topic
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
@@ -233,6 +236,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             }
         }
 
+        // 队列编号是否正确
         //队列id
         int queueIdInt = requestHeader.getQueueId();
         //最大的id数

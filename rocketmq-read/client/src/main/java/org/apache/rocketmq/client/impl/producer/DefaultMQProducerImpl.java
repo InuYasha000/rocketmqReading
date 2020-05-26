@@ -739,7 +739,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
                         //执行同步调用
                         // 调用发送消息核心方法
-                        //超时时间-costtime，因为还要悬着消息发送的队列
+                        //超时时间-costtime，因为还要选择消息发送的队列
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
 
                         endTimestamp = System.currentTimeMillis();
@@ -929,17 +929,18 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         SendMessageContext context = null;
         if (brokerAddr != null) {
-            //找到vip的地址
+            //找到vip的地址,是否使用broker vip通道。broker会开启两个端口对外服务。rocke有9876,非vip通道端口:10911,vip通道端口:10909
             brokerAddr = MixAll.brokerVIPChannel(this.defaultMQProducer.isSendMessageWithVIPChannel(), brokerAddr);
-
+            // 记录消息内容。下面逻辑可能改变消息内容，例如消息压缩。
             byte[] prevBody = msg.getBody();
             try {
                 //for MessageBatch,ID has been set in the generating process
                 if (!(msg instanceof MessageBatch)) {
-                    //
+                    // 设置唯一编号
+                    //当前时间-starttime +(AtomicInteger)COUNTER
                     MessageClientIDSetter.setUniqID(msg);
                 }
-
+                // 消息压缩
                 int sysFlag = 0;
                 boolean msgBodyCompressed = false;
                 if (this.tryToCompressMessage(msg)) {
@@ -950,10 +951,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
                 //如果是prepare事务消息，标记事务消息的flag
                 final String tranMsg = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
-                if (tranMsg != null && Boolean.parseBoolean(tranMsg)) {
+                if (tranMsg != null && Boolean.parseBoolean(tranMsg)) {//当String的值为“true”时返回ture，
                     sysFlag |= MessageSysFlag.TRANSACTION_PREPARED_TYPE;
                 }
 
+                // hook：发送消息校验
                 //检查forbiddenHook执行
                 if (hasCheckForbiddenHook()) {
                     CheckForbiddenContext checkForbiddenContext = new CheckForbiddenContext();
@@ -968,7 +970,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 }
 
                 /*
-                 * 如果有sendMessageHook，就依次执行sendHessageHook
+                 * 如果有sendMessageHook，就依次执行sendMessageHook
                  */
                 if (this.hasSendMessageHook()) {
                     context = new SendMessageContext();
@@ -1013,8 +1015,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                     String reconsumeTimes = MessageAccessor.getReconsumeTime(msg);
                     if (reconsumeTimes != null) {
-                        requestHeader.setReconsumeTimes(Integer.valueOf(reconsumeTimes));
-                        MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_RECONSUME_TIME);
+                        requestHeader.setReconsumeTimes(Integer.valueOf(reconsumeTimes));//消息头加入
+                        MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_RECONSUME_TIME);//清除
                     }
                     String maxReconsumeTimes = MessageAccessor.getMaxReconsumeTimes(msg);
                     if (maxReconsumeTimes != null) {
@@ -1034,7 +1036,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             //Clone new message using commpressed message body and recover origin massage.
                             //Fix bug:https://github.com/apache/rocketmq-externals/issues/66
                             tmpMessage = MessageAccessor.cloneMessage(msg);
-                            msg.setBody(prevBody);
+                            msg.setBody(prevBody);//这里的prevBody是原先记录的(压缩情况下的)
                         }
                         //超时
                         long costTimeAsync = System.currentTimeMillis() - beginStartTime;
