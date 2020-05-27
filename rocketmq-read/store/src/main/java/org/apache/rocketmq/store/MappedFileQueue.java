@@ -267,11 +267,12 @@ public class MappedFileQueue {
      * @return MappedFile
      */
     public MappedFile getLastMappedFile(final long startOffset, boolean needCreate) {
-        //createOffset
+        //createOffset  创建文件开始offset。-1时，不创建
         long createOffset = -1;
 
         MappedFile mappedFileLast = getLastMappedFile();
 
+        // 一个映射文件都不存在
         if (mappedFileLast == null) {
             createOffset = startOffset - (startOffset % this.mappedFileSize);
         }

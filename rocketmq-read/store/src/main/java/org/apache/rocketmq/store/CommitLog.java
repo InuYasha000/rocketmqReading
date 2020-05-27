@@ -87,7 +87,7 @@ public class CommitLog {
     private final ThreadLocal<MessageExtBatchEncoder> batchEncoderThreadLocal;
     /**
      * topic队列表
-     * key:topic-queueid
+     * key:topic-queueId
      * v:offset
      */
     private HashMap<String, Long> topicQueueTable = new HashMap<String, Long>(1024);
@@ -1311,21 +1311,25 @@ public class CommitLog {
          */
         private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
         /**
-         * 消息id内存
+         * 消息id内存，存储在内存中的消息编号字节Buffer
          */
         private final ByteBuffer msgIdMemory;
         /**
          *  Store the message content
+         *  存储在内存中的消息字节Buffer
+         *  当消息传递到{@link #doAppend(long, ByteBuffer, int, MessageExtBrokerInner)}方法时，最终写到该参数
          */
         private final ByteBuffer msgStoreItemMemory;
         /**
          * The maximum length of the message
-         * 消息最大长度
+         * 消息最大长度 4M
          */
         private final int maxMessageSize;
         /**
          *  Build Message Key
          *  msgKey
+         *  {@link #topicQueueTable}的key
+         *  计算方式：topic + "-" + queueId
          */
         private final StringBuilder keyBuilder = new StringBuilder();
         /**
@@ -1334,6 +1338,8 @@ public class CommitLog {
         private final StringBuilder msgIdBuilder = new StringBuilder();
         /**
          * hostholder
+         * host字节buffer
+         * 用于重复计算host的字节内容
          */
         private final ByteBuffer hostHolder = ByteBuffer.allocate(8);
 
@@ -1351,6 +1357,14 @@ public class CommitLog {
             return msgStoreItemMemory;
         }
 
+        /**
+         * @param fileFromOffset
+         * @param byteBuffer {@link MappedFile#writeBuffer} writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();
+         * @param maxBlank 剩余量 this.fileSize - currentPos（当前写入量）
+         * @param msgInner
+         * @return
+         */
+        //插入消息到字节缓冲区。
         @Override
         public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
             final MessageExtBrokerInner msgInner) {
@@ -1361,8 +1375,11 @@ public class CommitLog {
             long wroteOffset = fileFromOffset + byteBuffer.position();
 
             this.resetByteBuffer(hostHolder, 8);
+            // 计算commitLog里的msgId
+            //计算 CommitLog 里的 offsetMsgId,这里一定要和 msgId 区分开
             String msgId = MessageDecoder.createMessageId(this.msgIdMemory, msgInner.getStoreHostBytes(hostHolder), wroteOffset);
 
+            //获取队列offset
             // Record ConsumeQueue information
             keyBuilder.setLength(0);
             keyBuilder.append(msgInner.getTopic());
@@ -1393,11 +1410,13 @@ public class CommitLog {
             /**
              * Serialize message
              */
+            // 计算消息长度
             final byte[] propertiesData =
                 msgInner.getPropertiesString() == null ? null : msgInner.getPropertiesString().getBytes(MessageDecoder.CHARSET_UTF8);
 
             final int propertiesLength = propertiesData == null ? 0 : propertiesData.length;
 
+            //message长度是2的15次幂-1
             if (propertiesLength > Short.MAX_VALUE) {
                 log.warn("putMessage message properties length too long. length={}", propertiesData.length);
                 return new AppendMessageResult(AppendMessageStatus.PROPERTIES_SIZE_EXCEEDED);
@@ -1419,14 +1438,17 @@ public class CommitLog {
 
             // Determines whether there is sufficient free space
             if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
-                this.resetByteBuffer(this.msgStoreItemMemory, maxBlank);
+                //重置msgStoreItemMemory的limit（limit=maxBlank，position大于limit也会变成limit，反正position要比limit小）
+                this.resetByteBuffer(this.msgStoreItemMemory, maxBlank);//最多只能写maxBlank长度
                 // 1 TOTALSIZE
-                this.msgStoreItemMemory.putInt(maxBlank);
+                this.msgStoreItemMemory.putInt(maxBlank);//用于写入 int 值的相对 put 方法 表示长度就是maxBlank（不算END_FILE_MIN_BLANK_LENGTH）
                 // 2 MAGICCODE
-                this.msgStoreItemMemory.putInt(CommitLog.BLANK_MAGIC_CODE);
+                this.msgStoreItemMemory.putInt(CommitLog.BLANK_MAGIC_CODE);//END_FILE_MIN_BLANK_LENGTH这个长度可以占用
                 // 3 The remaining space may be any value
                 // Here the length of the specially set maxBlank
                 final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
+                //从msgStoreItemMemory数组中的offset到offset+length区域读取数据并使用相对写写入此byteBuffer
+                //TODO 不明白为什么不写魔数？？
                 byteBuffer.put(this.msgStoreItemMemory.array(), 0, maxBlank);
                 return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset, maxBlank, msgId, msgInner.getStoreTimestamp(),
                     queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);
