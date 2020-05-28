@@ -45,6 +45,8 @@ import sun.nio.ch.DirectBuffer;
  * MappedFile
  * @author ;
  */
+//方式一	写入内存字节缓冲区(writeBuffer) 从内存字节缓冲区(write buffer)提交(commit)到文件通道(fileChannel)  文件通道(fileChannel)flush
+//方式二 写入映射文件字节缓冲区(mappedByteBuffer) 映射文件字节缓冲区(mappedByteBuffer)flush
 public class MappedFile extends ReferenceResource {
     /**
      * osPache_size大小为4kb
@@ -418,7 +420,7 @@ public class MappedFile extends ReferenceResource {
      */
     public int flush(final int flushLeastPages) {
         if (this.isAbleToFlush(flushLeastPages)) {
-            if (this.hold()) {
+            if (this.hold()) {//引用计数来判断是否在刷盘中
                 int value = getReadPosition();
 
                 try {
@@ -446,9 +448,11 @@ public class MappedFile extends ReferenceResource {
 
     /**
      * 提交
+     * 当{@link #writeBuffer}为null时，直接返回{@link #wrotePosition}
      * @param commitLeastPages 提交的页数
-     * @return ;
+     * @return 当前commit位置
      */
+    //考虑到写入性能，满足 commitLeastPages * OS_PAGE_SIZE 才进行 commit
     public int commit(final int commitLeastPages) {
         if (writeBuffer == null) {
             //no need to commit data to file channel, so just regard wrotePosition as committedPosition.
@@ -477,7 +481,8 @@ public class MappedFile extends ReferenceResource {
 
     /**
      * 提交数据
-     * @param commitLeastPages ;
+     * commit实现，将writeBuffer写入fileChannel。
+     * @param commitLeastPages commit最小页数。用不上该参数
      */
     protected void commit0(final int commitLeastPages) {
         int writePos = this.wrotePosition.get();
@@ -500,10 +505,14 @@ public class MappedFile extends ReferenceResource {
     }
 
     /**
-     * 是否可以flush
+     * 是否能够flush。满足如下条件任意条件：
+     * 1. 映射文件已经写满
+     * 2. flushLeastPages > 0 && 未flush部分超过flushLeastPages
+     * 3. flushLeastPages = 0 && 有新写入部分
      * @param flushLeastPages 至少flush的脏页数量。
      * @return ;
      */
+    //考虑到写入性能，满足 flushLeastPages * OS_PAGE_SIZE 才进行 flush
     private boolean isAbleToFlush(final int flushLeastPages) {
         int flush = this.flushedPosition.get();
         int write = getReadPosition();
@@ -522,6 +531,12 @@ public class MappedFile extends ReferenceResource {
 
     /**
      * 是否可以提交
+     * 是否能够commit。满足如下条件任意条件：
+     * 1. 映射文件已经写满
+     * 2. commitLeastPages > 0 && 未commit部分超过commitLeastPages
+     * 3. commitLeastPages = 0 && 有新写入部分
+     * @param commitLeastPages commit最小分页
+     * @return 是否能够写入
      * @param commitLeastPages 需要提交的页
      * @return ;
      */
@@ -534,6 +549,10 @@ public class MappedFile extends ReferenceResource {
         }
 
         //目前未刷盘的页的数量大于commitLeastPages，才可以提交
+        /**
+         *{@link #org.apache.rocketmq.store.config.MessageStoreConfig.commitCommitLogThoroughInterval}
+         */
+        //commitCommitLogThoroughInterval上次提交超过这个间隔,commitCommitLogThoroughInterval=0,默认是4页
         if (commitLeastPages > 0) {
             return ((write / OS_PAGE_SIZE) - (commit / OS_PAGE_SIZE)) >= commitLeastPages;
         }
@@ -706,6 +725,7 @@ public class MappedFile extends ReferenceResource {
      * @return The max position which have valid data
      */
     public int getReadPosition() {
+        //==null情况是commit提交时==null
         return this.writeBuffer == null ? this.wrotePosition.get() : this.committedPosition.get();
     }
 
