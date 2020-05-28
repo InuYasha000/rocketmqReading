@@ -31,11 +31,11 @@ public enum AppendMessageStatus {
      */
     END_OF_FILE,
     /**
-     * 消息大小超限
+     * 消息大小超限，默认最大4M
      */
     MESSAGE_SIZE_EXCEEDED,
     /**
-     * properties的大小超限
+     * properties的大小超限，默认最大2的15次幂-1
      */
     PROPERTIES_SIZE_EXCEEDED,
     /**
