@@ -23,6 +23,7 @@ import java.util.Map;
 
 /**
  * 默认的消息Filter
+ * 消息过滤器默认实现
  * @author ;
  */
 public class DefaultMessageFilter implements MessageFilter {
@@ -37,6 +38,7 @@ public class DefaultMessageFilter implements MessageFilter {
 
     @Override
     public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+        // 消息tagsCode 空 订阅数据 空
         if (null == tagsCode || null == subscriptionData) {
             return true;
         }
@@ -45,6 +47,8 @@ public class DefaultMessageFilter implements MessageFilter {
             return true;
         }
 
+        // 订阅表达式 全匹配
+        // 订阅数据code数组 是否包含 消息tagsCode
         return subscriptionData.getSubString().equals(SubscriptionData.SUB_ALL)
             || subscriptionData.getCodeSet().contains(tagsCode.intValue());
     }

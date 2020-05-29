@@ -54,6 +54,7 @@ public class GetMessageResult {
      */
     private int bufferTotalSize = 0;
 
+    //建议从slave拉取（有可能上次拉取太慢了）
     private boolean suggestPullingFromSlave = false;
 
     private int msgCount4Commercial = 0;

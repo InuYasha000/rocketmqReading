@@ -33,7 +33,8 @@ public class ConsumeQueue {
     /**
      * 前文提到每个条目固定20个字节
      * 存储的每个条目都是固定的20个字节
-     * commitlogoffset:8个字节，size:消息长度，四个字节。 tagshashcode:8个字节，总计20个自己
+     * 1:MESSAGE_POSITION_INFO :commitlog offset:8个字节，size:消息长度，四个字节。 message Tags Hashcode:8个字节，总计20个字节
+     * 2:BLANK : 文件前置空白占位。当历史 Message 被删除时，需要用 BLANK占位被删除的消息。
      */
     public static final int CQ_STORE_UNIT_SIZE = 20;
     private static final InternalLogger LOG_ERROR = InternalLoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
@@ -478,6 +479,7 @@ public class ConsumeQueue {
     }
 
     /**
+     * 添加位置信息封装
      * 添加逻辑队列的信息
      * @param request 请求
      */
@@ -485,6 +487,7 @@ public class ConsumeQueue {
 
         final int maxRetries = 30;
         boolean canWrite = this.defaultMessageStore.getRunningFlags().isCQWriteable();
+        // 多次循环写，直到成功
         for (int i = 0; i < maxRetries && canWrite; i++) {
             long tagsCode = request.getTagsCode();
             if (isExtWriteEnable()) {
@@ -501,9 +504,11 @@ public class ConsumeQueue {
                         topic, queueId, request.getCommitLogOffset());
                 }
             }
+            // 调用添加位置信息
             boolean result = this.putMessagePositionInfo(request.getCommitLogOffset(),
                 request.getMsgSize(), tagsCode, request.getConsumeQueueOffset());
             if (result) {
+                // 添加成功，使用消息存储时间 作为 存储check point。
                 this.defaultMessageStore.getStoreCheckpoint().setLogicsMsgTimestamp(request.getStoreTimestamp());
                 return;
             } else {
@@ -519,37 +524,45 @@ public class ConsumeQueue {
             }
         }
 
-        // XXX: warn and notify me
+        // XXX: warn and notify me 设置异常不可写入
         log.error("[BUG]consume queue can not write, {} {}", this.topic, this.queueId);
         this.defaultMessageStore.getRunningFlags().makeLogicsQueueError();
     }
 
     /**
      * 添加消息到逻辑队列
-     * @param offset commitlog物理偏移量
+     * 添加位置信息，并返回添加是否成功
+     * @param offset commitlog物理偏移量  commitLog存储位置
      * @param size size
      * @param tagsCode tags的哈希code
      * @param cqOffset 消费队列偏移量
-     * @return ;
+     * @return ;添加是否成功
      */
     private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode,
         final long cqOffset) {
 
+        // 如果已经重放过，直接返回成功
         if (offset <= this.maxPhysicOffset) {
             return true;
         }
 
+        // 写入位置信息到byteBuffer
+        // 索引文件的bytebuffer
         this.byteBufferIndex.flip();
         this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
+        //相对写
         this.byteBufferIndex.putLong(offset);
         this.byteBufferIndex.putInt(size);
         this.byteBufferIndex.putLong(tagsCode);
 
+        // 计算consumeQueue存储位置，并获得对应的MappedFile
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
         if (mappedFile != null) {
 
+            // 当是ConsumeQueue第一个MappedFile && 队列位置非第一个 && MappedFile未写入内容，则填充前置空白占位
+            // TODO 疑问：为啥这个操作。目前能够想象到的是，一些老的消息很久没发送，突然发送，这个时候刚好满足。
             if (mappedFile.isFirstCreateInQueue() && cqOffset != 0 && mappedFile.getWrotePosition() == 0) {
                 this.minLogicOffset = expectLogicOffset;
                 this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
@@ -559,6 +572,7 @@ public class ConsumeQueue {
                     + mappedFile.getWrotePosition());
             }
 
+            // 校验consumeQueue存储位置是否合法。TODO 如果不合法，继续写入会不会有问题？
             if (cqOffset != 0) {
                 long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
 
@@ -591,11 +605,13 @@ public class ConsumeQueue {
      * @param untilWhere ;
      */
     private void fillPreBlank(final MappedFile mappedFile, final long untilWhere) {
+        // 写入前置空白占位到byteBuffer
         ByteBuffer byteBuffer = ByteBuffer.allocate(CQ_STORE_UNIT_SIZE);
         byteBuffer.putLong(0L);
         byteBuffer.putInt(Integer.MAX_VALUE);
         byteBuffer.putLong(0L);
 
+        // 循环填空
         int until = (int) (untilWhere % this.mappedFileQueue.getMappedFileSize());
         for (int i = 0; i < until; i += CQ_STORE_UNIT_SIZE) {
             mappedFile.appendMessage(byteBuffer.array());

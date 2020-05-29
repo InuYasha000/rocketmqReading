@@ -47,6 +47,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     /**
      * key:topic@group
      * value:队列id，消费偏移量
+     * 消费进度集合
      */
     private ConcurrentMap<String, ConcurrentMap<Integer, Long>> offsetTable = new ConcurrentHashMap<>(512);
 
