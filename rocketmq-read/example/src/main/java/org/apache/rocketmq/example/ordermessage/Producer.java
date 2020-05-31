@@ -38,6 +38,8 @@ public class Producer {
             String[] tags = new String[] {"TagA", "TagB", "TagC", "TagD", "TagE"};
             for (int i = 0; i < 100; i++) {
                 int orderId = i % 10;
+                //实现了根据 id % mqs.size() 来进行消息队列的选择。
+                //当前例子，我们传递 orderId 作为参数，那么相同的 orderId 能够进入相同的消息队列
                 Message msg =
                     new Message("TopicTestjjj", tags[i % tags.length], "KEY" + i,
                         ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));

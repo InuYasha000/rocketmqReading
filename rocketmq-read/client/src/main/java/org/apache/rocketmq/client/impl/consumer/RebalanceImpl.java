@@ -179,6 +179,7 @@ public abstract class RebalanceImpl {
     }
 
     /**
+     * 请求Broker获得指定消息队列的分布式锁
      * lock某一个队列
      * @param mq mq
      * @return ;
@@ -193,8 +194,10 @@ public abstract class RebalanceImpl {
             requestBody.getMqSet().add(mq);
 
             try {
+                // 请求Broker获得指定消息队列的分布式锁
                 Set<MessageQueue> lockedMq =
                     this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
+                // 设置消息处理队列锁定成功。锁定消息队列成功，可能本地没有消息处理队列，设置锁定成功会在lockAll()方法。
                 for (MessageQueue mmqq : lockedMq) {
                     //ProcessQueue标记为上锁状态
                     ProcessQueue processQueue = this.processQueueTable.get(mmqq);
@@ -409,6 +412,8 @@ public abstract class RebalanceImpl {
 
     /**
      * 更新ProcessQuquetable 在rebalance
+     * 集群模式下，Consumer 更新属于自己的消息队列时，会向 Broker 锁定该消息队列（广播模式下不需要）。
+     * 如果锁定失败，则更新失败，即该消息队列不属于自己，不能进行消费
      * @param topic ;
      * @param mqSet ;
      * @param isOrder ;
