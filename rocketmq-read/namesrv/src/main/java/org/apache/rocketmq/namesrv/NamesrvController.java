@@ -95,7 +95,7 @@ public class NamesrvController {
         /*
          * load kvconfigManager
          */
-        this.kvConfigManager.load();
+        this.kvConfigManager.load();//将kv配置存入KVConfigManager.configTable
         //实例化通信层Server
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
         //实例化通信层线程池
@@ -103,7 +103,7 @@ public class NamesrvController {
         //注册Processor
         this.registerProcessor();
 
-        //定时扫描不活跃的Broker
+        //定时扫描不活跃的Broker，每隔10秒扫描一次Broker
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -112,7 +112,7 @@ public class NamesrvController {
             }
         }, 5, 10, TimeUnit.SECONDS);
 
-        //定时扫描KVconfigManager
+        //定时扫描KVconfigManager，每隔10分钟打印一次KV配置
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override

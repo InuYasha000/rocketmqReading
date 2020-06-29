@@ -438,6 +438,7 @@ public class MixAll {
 
     /**
      * 对象变成properties
+     * 比如object是NamesrvConfig类型时，NamesrvConfig中非static，非this开头的属性都会转成properties
      * @param object ;
      * @return ;
      */
@@ -469,6 +470,7 @@ public class MixAll {
 
     /**
      * 反射的方式，properties变成对象
+     * Properties中的属性在object中有对应的set方法则利用反射对object对应属性赋值
      * @param p p
      * @param object obj
      */
@@ -476,12 +478,12 @@ public class MixAll {
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
             String mn = method.getName();
-            if (mn.startsWith("set")) {
+            if (mn.startsWith("set")) {//setClusterTest
                 try {
-                    String tmp = mn.substring(4);
-                    String first = mn.substring(3, 4);
+                    String tmp = mn.substring(4);//lusterTest
+                    String first = mn.substring(3, 4);//C
 
-                    String key = first.toLowerCase() + tmp;
+                    String key = first.toLowerCase() + tmp;//clusterTest
                     String property = p.getProperty(key);
                     if (property != null) {
                         Class<?>[] pt = method.getParameterTypes();

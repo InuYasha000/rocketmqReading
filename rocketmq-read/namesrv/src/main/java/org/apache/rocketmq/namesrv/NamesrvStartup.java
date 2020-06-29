@@ -83,10 +83,11 @@ public class NamesrvStartup {
             return null;
         }
 
+        //填充namesrvConfig和nettyServerConfig
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
         nettyServerConfig.setListenPort(9876);
-        if (commandLine.hasOption('c')) {
+        if (commandLine.hasOption('c')) {//配置文件路径 -c configFile
             String file = commandLine.getOptionValue('c');
             if (file != null) {
                 InputStream in = new BufferedInputStream(new FileInputStream(file));
@@ -128,9 +129,11 @@ public class NamesrvStartup {
         MixAll.printObjectProperties(log, namesrvConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
 
+        //创建NamesrvController，初始化
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
         // remember all configs to prevent discard
+        //将properties合并到Configuration.allConfigs
         controller.getConfiguration().registerConfig(properties);
 
         return controller;

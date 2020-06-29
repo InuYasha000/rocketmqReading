@@ -1080,6 +1080,7 @@ public class BrokerController {
             @Override
             public void run() {
                 try {
+                    //注意这里的是否oneway是false，具体操作请跟进去方法看
                     BrokerController.this.registerBrokerAll(true, false, brokerConfig.isForceRegister());
                 } catch (Throwable e) {
                     log.error("registerBrokerAll Exception", e);

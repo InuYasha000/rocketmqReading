@@ -110,7 +110,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
              * 注册Broker
              * 注册Broker信息；由BrokerOuterAPI.registerBroker使用，在BrokerController启动时调用
              */
-            case RequestCode.REGISTER_BROKER:
+            case RequestCode.REGISTER_BROKER://路由注册
                 Version brokerVersion = MQVersion.value2Version(request.getVersion());
                 /*
                  * 如果是大于 3.0.11分支，走这个版本
@@ -130,7 +130,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             /*
              * 获取某个topic的路由
              */
-            case RequestCode.GET_ROUTEINTO_BY_TOPIC:
+            case RequestCode.GET_ROUTEINTO_BY_TOPIC://路由发现
                 return this.getRouteInfoByTopic(ctx, request);
             /*
              *  获取broker的集群信息

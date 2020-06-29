@@ -146,6 +146,7 @@ public class BrokerOuterAPI {
      * @param timeoutMills timeoutMills
      * @param compressed compressed
      * @return ;
+     * 使用线程池来向nameServer注册broker信息，但是使用countDownLatch来保证所有结果都在registerBrokerResultList，即使oneway是false或者true
      */
     public List<RegisterBrokerResult> registerBrokerAll(
         final String clusterName,

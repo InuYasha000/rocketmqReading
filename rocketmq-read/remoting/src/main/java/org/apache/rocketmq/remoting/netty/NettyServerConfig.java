@@ -22,7 +22,7 @@ package org.apache.rocketmq.remoting.netty;
  */
 public class NettyServerConfig implements Cloneable {
     /**
-     * 监听端口，默认8888
+     * 监听端口，默认8888，会被初始化为9876
      */
     private int listenPort = 8888;
     /**
