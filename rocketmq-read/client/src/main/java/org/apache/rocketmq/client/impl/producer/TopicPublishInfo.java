@@ -37,11 +37,11 @@ public class TopicPublishInfo {
      */
     private boolean haveTopicRouterInfo = false;
     /**
-     * 消息队列
+     * 该主题的消息队列
      */
     private List<MessageQueue> messageQueueList = new ArrayList<MessageQueue>();
     /**
-     * 自增ThreadLocal
+     * 自增ThreadLocal，选择一次队列就+1，超过Integer.MAX_VALUE则重置为0。
      */
     private volatile ThreadLocalIndex sendWhichQueue = new ThreadLocalIndex();
     /**

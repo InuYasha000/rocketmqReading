@@ -23,6 +23,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 /**
  * MessageQueueSelector。消息队列选择器。
  * 当发送顺序消息的时候会用到，需要用户自己实现
+ * 消息选择算法
  * @author ;
  */
 public interface MessageQueueSelector {

@@ -42,6 +42,7 @@ public interface MQProducer extends MQAdmin {
 
     /**
      * 获取生产者的MessageQueue
+     * 查找主题下所有的消息队列
      * @param topic topic
      * @return ;
      * @throws MQClientException ;
@@ -61,7 +62,7 @@ public interface MQProducer extends MQAdmin {
         InterruptedException;
 
     /**
-     * 同步发送
+     * 带超时时间的同步发送
      * @param msg msg
      * @param timeout 带超时时间
      * @return ;
@@ -106,7 +107,7 @@ public interface MQProducer extends MQAdmin {
     void sendOneway(final Message msg) throws MQClientException, RemotingException, InterruptedException;
 
     /**
-     * 选择一个队列进行同步发送
+     * 同步发送到指定队列
      * @param msg msg
      * @param mq 队列
      * @return ;
@@ -119,7 +120,7 @@ public interface MQProducer extends MQAdmin {
         RemotingException, MQBrokerException, InterruptedException;
 
     /**
-     * 选择一个队列
+     * 同步发送到指定队列，超过时间，抛出超时异常
      * @param msg msg
      * @param mq mq
      * @param timeout 超时
@@ -133,7 +134,7 @@ public interface MQProducer extends MQAdmin {
         throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
 
     /**
-     * 异步选取一个队列发送消息
+     * 异步发送到指定队列
      * @param msg msg
      * @param mq mq
      * @param sendCallback sendCallback 执行callback
@@ -145,7 +146,7 @@ public interface MQProducer extends MQAdmin {
         throws MQClientException, RemotingException, InterruptedException;
 
     /**
-     * 异步选取一个队列发送消息，带超时
+     * 异步发送到指定队列，带超时
      * @param msg ;
      * @param mq ;
      * @param sendCallback ;
@@ -169,7 +170,7 @@ public interface MQProducer extends MQAdmin {
         RemotingException, InterruptedException;
 
     /**
-     * 通过MessageQueueSelector同步发送Message
+     * 通过MessageQueueSelector同步发送Message，指定消息选择算法，覆盖消息生产者默认的消息队列负载
      * @param msg msg
      * @param selector selector
      * @param arg arg
@@ -286,7 +287,7 @@ public interface MQProducer extends MQAdmin {
         RemotingException, MQBrokerException, InterruptedException;
 
     /**
-     * 选取一个队列发送批量消息
+     * 向指定同步发送批量消息
      * @param msgs msgs
      * @param mq 队列
      * @return ;
@@ -299,7 +300,7 @@ public interface MQProducer extends MQAdmin {
         RemotingException, MQBrokerException, InterruptedException;
 
     /**
-     * 选取一个队列发送批量消息
+     * 向指定队列同步发送批量消息
      * @param msgs msgs
      * @param mq mq
      * @param timeout 超时

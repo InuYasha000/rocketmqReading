@@ -101,6 +101,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private final DefaultMQProducer defaultMQProducer;
     /**
      * key: topic，value是topicPublishInfo
+     * 生产者缓存
      */
     private final ConcurrentMap<String, TopicPublishInfo> topicPublishInfoTable = new ConcurrentHashMap<String, TopicPublishInfo>();
     /**
@@ -203,16 +204,16 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             case CREATE_JUST:
                 this.serviceState = ServiceState.START_FAILED;
 
-                this.checkConfig();
+                this.checkConfig();//检查组名不超过255字符，只能是大小写字母数字下划线
 
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
-                    //更新实例Name变成pid
+                    //更新org.apache.rocketmq.client.ClientConfig.instanceName变成进程pid
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
 
                 this.mQClientFactory = MQClientManager.getInstance().getAndCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 
-                //在mQClientFactory中注册producer
+                //在mQClientFactory中注册producer，其实就是放入MQClientInstance.producerTable
                 boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
@@ -700,7 +701,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         long beginTimestampPrev = beginTimestampFirst;
         //end时间戳
         long endTimestamp = beginTimestampFirst;
-        //尝试找到TopicPublishInfo
+        //尝试找到TopicPublishInfo，以便知道具体发送到哪个Broker
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
 
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
@@ -723,7 +724,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             for (; times < timesTotal; times++) {
                 //上一个brokerName,一开始为null
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
-                // 选择消息要发送到的队列
+                // 选择消息要发送到的队列，貌似会优先发送上一次的队列
                 MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName);
                 if (mqSelected != null) {
                     mq = mqSelected;

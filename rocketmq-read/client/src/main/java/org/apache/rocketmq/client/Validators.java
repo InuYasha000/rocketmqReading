@@ -44,6 +44,7 @@ public class Validators {
 
     /**
      * 检查组名
+     * 组名不能超过255个字符，只能是大小写字母数字下划线
      * Validate group
      */
     public static void checkGroup(String group) throws MQClientException {
@@ -74,7 +75,7 @@ public class Validators {
 
     /**
      * Validate message
-     * 校验消息的合法性
+     * 校验消息的合法性，主题名称规范，消息体不能为空，不能超过默认允许最大长度
      */
     public static void checkMessage(Message msg, DefaultMQProducer defaultMQProducer)
         throws MQClientException {

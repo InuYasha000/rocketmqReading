@@ -35,7 +35,7 @@ public class MQClientManager {
      */
     private final static InternalLogger log = ClientLogger.getLog();
     /**
-     * 客户端管理器-单例
+     * 客户端管理器-单例(饿汉式保证单例模式)
      */
     private static MQClientManager instance = new MQClientManager();
 

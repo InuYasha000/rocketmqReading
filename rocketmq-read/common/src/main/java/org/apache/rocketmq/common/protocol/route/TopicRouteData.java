@@ -31,15 +31,16 @@ import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
  */
 public class TopicRouteData extends RemotingSerializable {
     /**
-     * broker:12;brokerbB:12 这样的配置
+     * 顺序消息主题配置信息，示例 broker:12;brokerbB:12
+     * 跟这个有关系{@link org.apache.rocketmq.client.impl.producer.TopicPublishInfo#orderTopic}
      */
     private String orderTopicConf;
     /**
-     * 队列信息
+     * 队列信息,topic队列元数据
      */
     private List<QueueData> queueDatas;
     /**
-     * Broker信息
+     * topic分布的Broker信息
      */
     private List<BrokerData> brokerDatas;
     /**

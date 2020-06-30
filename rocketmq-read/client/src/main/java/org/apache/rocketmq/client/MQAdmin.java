@@ -32,9 +32,9 @@ public interface MQAdmin {
      * Creates an topic
      * 创建topic
      * @param key accesskey
-     * @param newTopic topic name
-     * @param queueNum topic's queue number
-     * @throws MQClientException ;
+     * @param newTopic topic name,主题名称
+     * @param queueNum topic's queue number，队列数量
+     * @throws MQClientException ;，主题系统标签，默认为0
      */
     void createTopic(final String key, final String newTopic, final int queueNum)
         throws MQClientException;
@@ -54,7 +54,7 @@ public interface MQAdmin {
     /**
      * Gets the message queue offset according to some time in milliseconds<br>
      * be cautious to call because of more IO overhead
-     * 查询队列的偏移量
+     * 根据时间戳从队列中查询其偏移量
      * @param mq Instance of MessageQueue
      * @param timestamp from when in milliseconds.
      * @return offset
@@ -64,7 +64,7 @@ public interface MQAdmin {
 
     /**
      * Gets the max offset
-     * 最大的偏移量
+     * 查找某个队列最大的偏移量
      * @param mq Instance of MessageQueue
      * @return the max offset
      * @throws MQClientException ;
@@ -73,7 +73,7 @@ public interface MQAdmin {
 
     /**
      * Gets the minimum offset
-     * 最小的偏移量
+     * 某个队列最小的偏移量
      * @param mq Instance of MessageQueue
      * @return the minimum offset
      * @throws MQClientException ;
@@ -91,8 +91,8 @@ public interface MQAdmin {
 
     /**
      * Query message according tto message id
-     * 根据offsetMsgid查询一条消息
-     * @param offsetMsgId message id
+     * 根据消息偏移量查询一条消息，
+     * @param offsetMsgId message id，也就是消息偏移量
      * @return message
      * @throws RemotingException ;
      * @throws MQBrokerException ;
@@ -105,9 +105,9 @@ public interface MQAdmin {
     /**
      * Query messages
      * 批量查询Messages
-     * @param topic message topic
-     * @param key message key index word
-     * @param maxNum max message number
+     * @param topic message topic，消息主题
+     * @param key message key index word，消息索引
+     * @param maxNum max message number，本次最多取出消息条数
      * @param begin from when
      * @param end to when
      * @return Instance of QueryResult
@@ -118,7 +118,7 @@ public interface MQAdmin {
         final long end) throws MQClientException, InterruptedException;
 
     /**
-     * 根据msgId 查询msg
+     * 根据msgId和主题 查询msg
      * @return The {@code MessageExt} of given msgId
      * @throws RemotingException ;
      * @throws MQBrokerException ;

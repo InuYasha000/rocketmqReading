@@ -59,7 +59,7 @@ import org.apache.rocketmq.remoting.netty.NettyRemotingClient;
  */
 
 /**
- * 生产者发送消息的客户端API。都代理给了 DefaultMQProducerImpl
+ * 生产者发送消息的客户端API。都代理给了 DefaultMQProducerImpl，代理模式
  * @author ;
  */
 public class DefaultMQProducer extends ClientConfig implements MQProducer {
@@ -79,6 +79,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * For non-transactional messages, it does not matter as long as it's unique per process.
      * 生产者组概念上聚合了完全相同角色的所有生产者实例，特别是
      * 当涉及事务性消息时很重要。
+     * 消息服务器在回查事务状态时会随机选择改组中任何一个生产者发起事务回查请求
      * </p>
      *
      * See {@linktourl http://rocketmq.apache.org/docs/core-concept/} for more discussion.
@@ -88,18 +89,19 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     /**
      * Just for testing or demo program
      * 如果autocreate可以，使用AUTO_CREATE_TOPIC_KEY_TOPIC
+     * 默认topicKey
      */
     private String createTopicKey = MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC;
 
     /**
      * Number of queues to create per default topic.
-     * 创建defaulttopic的队列数
+     * 创建默认主题在每一个Broker的队列数
      */
     private volatile int defaultTopicQueueNums = 4;
 
     /**
      * Timeout for sending messages.
-     * 发送消息的超时，3秒默认
+     * 发送消息的默认超时时间3秒
      */
     private int sendMsgTimeout = 6000;
 
@@ -114,7 +116,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * </p>
      *
      * This may potentially cause message duplication which is up to application developers to resolve.
-     * 发送失败重试2次
+     * 发送失败重试2次，也就是总共执行3次
      */
     private int retryTimesWhenSendFailed = 2;
 
@@ -129,13 +131,14 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
     /**
      * Indicate whether to retry another broker on sending failure internally.
-     * 如果消息发送失败，就重试另外的broker，
+     * 如果消息发送失败，就重试另外的broker
+     * 消息发送失败，是否不等待失败消息返回旧重试另一个Broker
      */
     private boolean retryAnotherBrokerWhenNotStoreOK = false;
 
     /**
      * Maximum allowed message size in bytes.
-     * 最大允许的消息size，最大4m
+     * 最大允许的消息size，默认4M,最大值是2<<32-1(4g-1)
      */
     private int maxMessageSize = 1024 * 1024 * 4; // 4M
 

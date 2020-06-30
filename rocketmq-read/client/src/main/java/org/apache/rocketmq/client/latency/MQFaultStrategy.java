@@ -107,7 +107,7 @@ public class MQFaultStrategy {
                     }
                 }
 
-                //选择一个相对好的broker，不考虑可用性的消息队列
+                //选择一个相对好的broker，不考虑可用性的消息队列(就是随机选择)
                 final String notBestBroker = latencyFaultTolerance.pickOneAtLeast();
                 int writeQueueNums = tpInfo.getQueueIdByBroker(notBestBroker);
                 if (writeQueueNums > 0) {

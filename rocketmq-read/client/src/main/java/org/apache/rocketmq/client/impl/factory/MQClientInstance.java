@@ -272,6 +272,7 @@ public class MQClientInstance {
             for (QueueData qd : qds) {
                 if (PermName.isWriteable(qd.getPerm())) {
                     BrokerData brokerData = null;
+                    //找到TopicRouteData.brokerDatas中brokerName为qd.getBrokerName()的brokerData
                     for (BrokerData bd : route.getBrokerDatas()) {
                         if (bd.getBrokerName().equals(qd.getBrokerName())) {
                             brokerData = bd;
@@ -759,8 +760,10 @@ public class MQClientInstance {
             if (true) {
                 try {
                     TopicRouteData topicRouteData;
+                    //此时是从Namesrv获取一次仍然是无可用的 Topic发布信息时，再去获取并保证topic存在，否则报错
                     if (isDefault && defaultMQProducer != null) {
 
+                        //不允许topic不存在，用默认主题查询
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(defaultMQProducer.getCreateTopicKey(),
                             1000 * 3);
 
@@ -774,6 +777,7 @@ public class MQClientInstance {
                         }
                     } else {
                         //获取topicRouteInfo
+                        //允许topic不存在
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, 1000 * 3);
                     }
                     if (topicRouteData != null) {
@@ -781,6 +785,7 @@ public class MQClientInstance {
                         boolean changed = topicRouteDataIsChange(old, topicRouteData);
                         //未更新
                         if (!changed) {
+                            //是否需要更新路由，就是看这个topic对应的消息队列是否为空或者null，详见isNeedUpdateTopicRouteInfo(),代码易懂
                             changed = this.isNeedUpdateTopicRouteInfo(topic);
                         } else {
                             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
@@ -798,6 +803,9 @@ public class MQClientInstance {
                             }
 
                             // Update Pub info
+                            /**
+                             * 更新{@link DefaultMQProducerImpl#topicPublishInfoTable}
+                             */
                             {
                                 TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);
                                 publishInfo.setHaveTopicRouterInfo(true);
