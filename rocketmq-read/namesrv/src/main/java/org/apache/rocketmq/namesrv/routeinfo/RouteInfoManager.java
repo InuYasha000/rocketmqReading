@@ -340,7 +340,7 @@ public class RouteInfoManager {
     }
 
     /**
-     * 获取某个Broker地址的时间戳
+     * 更新某个Broker地址的时间戳
      * @param brokerAddr broker地址
      */
     public void updateBrokerInfoUpdateTimestamp(final String brokerAddr) {
@@ -434,6 +434,7 @@ public class RouteInfoManager {
                 QueueData qd = it.next();
                 if (qd.getBrokerName().equals(brokerName)) {
                     int perm = qd.getPerm();
+                    //这里做&= ~PermName.PERM_WRITE操作在于PermName.isWriteable()中是(perm & PERM_WRITE) == PERM_WRITE
                     perm &= ~PermName.PERM_WRITE;
                     qd.setPerm(perm);
                     wipeTopicCnt++;
@@ -499,7 +500,7 @@ public class RouteInfoManager {
                     }
                 }
 
-                //如果完全移除了一个Broker，就从clusterAddrTable的列表移除该broker
+                //如果完全移除了一个Broker，也就是brokerAddrTable中完全移除了brokerName，那么就从clusterAddrTable的列表移除该broker
                 if (removeBrokerName) {
                     Set<String> nameSet = this.clusterAddrTable.get(clusterName);
                     if (nameSet != null) {
@@ -526,7 +527,7 @@ public class RouteInfoManager {
     }
 
     /**
-     * 移除一个broker下的全部topic
+     * 移除{@link topicQueueTable}下某个topic参数为brokerName的QueueData
      * @param brokerName ;
      */
     private void removeTopicByBrokerName(final String brokerName) {
@@ -645,6 +646,7 @@ public class RouteInfoManager {
 
     /**
      * 通过关闭时触发此事件
+     * 主要是根据channel来清除相关broker信息，代码结构很清晰
      * @param remoteAddr ;
      * @param channel ;
      */
@@ -989,6 +991,10 @@ public class RouteInfoManager {
 /**
  * 存活着Broker信息
  */
+//public 权限的类只能有一个（也可以一个都没有，但最多只有1个）
+//这个.java文件的文件名必须是public类的类名（一般的情况下，这里放置main方法是程序的入口。）
+//若这个文件中没有public的类，则文件名随便是一个类的名字即可
+//用javac 编译这个.java文件的时候，它会给每一个类生成一个.class文件
 class BrokerLiveInfo {
     /**
      * 上次更新的时间戳

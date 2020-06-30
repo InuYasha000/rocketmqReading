@@ -97,6 +97,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     private final Lock lockChannelTables = new ReentrantLock();
     /**
      * 地址的channelWrapper
+     * key:{@link namesrvAddrChoosed}
      */
     private final ConcurrentMap<String /* addr */, ChannelWrapper> channelTables = new ConcurrentHashMap<String, ChannelWrapper>();
     /**
@@ -105,14 +106,17 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     private final Timer timer = new Timer("ClientHouseKeepingService", true);
     /**
      * namesrvAddrList的原子性引用
+     * index :{@link namesrvIndex}
      */
     private final AtomicReference<List<String>> namesrvAddrList = new AtomicReference<List<String>>();
     /**
      * namesrvAddrChoosed的原子性引用
+     * 从{@link namesrvAddrList}中拿到的
      */
     private final AtomicReference<String> namesrvAddrChoosed = new AtomicReference<String>();
     /**
      * nameServer的index
+     * {@link namesrvAddrList}的index
      */
     private final AtomicInteger namesrvIndex = new AtomicInteger(initValueIndex());
     /**
@@ -513,6 +517,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
      * @throws InterruptedException ;
      */
     private Channel getAndCreateNameserverChannel() throws InterruptedException {
+        // 返回已选择、可连接Namesrv
         String addr = this.namesrvAddrChoosed.get();
         if (addr != null) {
             ChannelWrapper cw = this.channelTables.get(addr);
@@ -522,6 +527,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
 
         final List<String> addrList = this.namesrvAddrList.get();
+        //默认3秒
         if (this.lockNamesrvChannel.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
             try {
                 addr = this.namesrvAddrChoosed.get();

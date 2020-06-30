@@ -25,7 +25,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
  */
 public class TopicList extends RemotingSerializable {
     /**
-     * 一个Broker下的所有的topic
+     * 一个Broker下的所有的topic(这个注释也不算太对，在{@link org.apache.rocketmq.namesrv.routeinfo.RouteInfoManager#getSystemTopicList()}中就不是)
      */
     private Set<String> topicList = new HashSet<String>();
     /**
