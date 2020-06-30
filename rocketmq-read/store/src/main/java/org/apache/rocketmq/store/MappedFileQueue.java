@@ -587,7 +587,7 @@ public class MappedFileQueue {
         boolean result = true;
         MappedFile mappedFile = this.findMappedFileByOffset(this.committedWhere, this.committedWhere == 0);
         if (mappedFile != null) {
-            int offset = mappedFile.commit(commitLeastPages);
+            int offset = mappedFile.commit(commitLeastPages);//返回已经提交到哪的offset
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.committedWhere;
             this.committedWhere = where;
@@ -627,11 +627,13 @@ public class MappedFileQueue {
                     }
 
                     //找到了合适的mappedFile,返回
+                    //不为null而且偏移量在当前file的偏移量之间
                     if (targetFile != null && offset >= targetFile.getFileFromOffset() && offset < targetFile.getFileFromOffset() + this.mappedFileSize) {
                         return targetFile;
                     }
 
                     //循环遍历返回合适的
+                    //上面方法没有得到的话，只能根据这个'笨'方法来
                     for (MappedFile tmpMappedFile : this.mappedFiles) {
                         if (offset >= tmpMappedFile.getFileFromOffset() && offset < tmpMappedFile.getFileFromOffset() + this.mappedFileSize) {
                             return tmpMappedFile;

@@ -92,14 +92,15 @@ public class UtilAll {
 
     /**
      * offset格式化
+     * offset转换为fileName
      * @param offset offset
      * @return  ;
      */
     public static String offset2FileName(final long offset) {
         final NumberFormat nf = NumberFormat.getInstance();
-        //设置整数最少显示位数
+        //设置整数最少显示位数，也就是偏移量超过20位用0补齐
         nf.setMinimumIntegerDigits(20);
-        //设置数值的【小数部分】允许的最大位数
+        //设置数值的【小数部分】允许的最大位数，不允许小数
         nf.setMaximumFractionDigits(0);
         nf.setGroupingUsed(false);
         return nf.format(offset);

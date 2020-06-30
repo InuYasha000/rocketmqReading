@@ -683,7 +683,7 @@ public class CommitLog {
         MappedFile unlockMappedFile = null;
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
 
-        //135行 乐观锁（cas）或者非公平锁，配置得来，默认 MessageStoreConfig.useReentrantLockWhenPutMessage = false ;自旋锁
+        //乐观锁（cas）或者非公平锁，配置得来，默认 MessageStoreConfig.useReentrantLockWhenPutMessage = false ;自旋锁，也就是默认使用乐观锁
         putMessageLock.lock(); //spin or ReentrantLock ,depending on store config
         try {
             long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
@@ -694,7 +694,7 @@ public class CommitLog {
             msg.setStoreTimestamp(beginLockTimestamp);
 
             if (null == mappedFile || mappedFile.isFull()) {
-                //如果没有mappedFile或者文件已写满，可能会创建新文件
+                //如果没有mappedFile(本次消息是第一次消息发送)或者文件已写满，可能会创建新文件
                 mappedFile = this.mappedFileQueue.getLastMappedFile(0); // Mark: NewFile may be cause noise
             }
             if (null == mappedFile) {
@@ -711,6 +711,7 @@ public class CommitLog {
                 case END_OF_FILE:// 当文件尾时，获取新的映射文件，并进行插入
                     unlockMappedFile = mappedFile;
                     // Create a new file, re-write the message
+                    //此时文件满了，创建新的文件，再次插入
                     mappedFile = this.mappedFileQueue.getLastMappedFile(0);
                     if (null == mappedFile) {
                         // XXX: warn and notify me

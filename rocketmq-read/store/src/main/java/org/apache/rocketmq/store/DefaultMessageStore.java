@@ -101,7 +101,7 @@ public class DefaultMessageStore implements MessageStore {
      */
     private final AllocateMappedFileService allocateMappedFileService;
     /**
-     * 重新添加消息的服务
+     * 重新添加消息的服务,CommitLog消息分发，根据CommitLog文件构建ConsumeQueue，IndexFile文件
      */
     private final ReputMessageService reputMessageService;
     /**
@@ -118,6 +118,7 @@ public class DefaultMessageStore implements MessageStore {
     private final StoreStatsService storeStatsService;
     /**
      * 瞬时存储pool。分配池化的ByteBuffer
+     * 消息堆内存缓存
      */
     private final TransientStorePool transientStorePool;
     /**
@@ -447,14 +448,14 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         //topic的length太长
-        // 消息过长
+        // 消息topic过长,127个字符
         if (msg.getTopic().length() > Byte.MAX_VALUE) {
             log.warn("putMessage message topic length too long " + msg.getTopic().length());
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
 
         //properries太长
-        // 消息附加属性过长
+        // 消息附加属性过长，32767个字符
         if (msg.getPropertiesString() != null && msg.getPropertiesString().length() > Short.MAX_VALUE) {
             log.warn("putMessage message properties length too long " + msg.getPropertiesString().length());
             return new PutMessageResult(PutMessageStatus.PROPERTIES_SIZE_EXCEEDED, null);

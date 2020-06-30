@@ -101,7 +101,7 @@ public class StoreStatsService extends ServiceThread {
     private final LinkedList<CallSnapshot> transferedMsgCountList = new LinkedList<CallSnapshot>();
 
     /**
-     * 耗时在不同时间段的计次数组。和PUT_MESSAGE_ENTIRE_TIME_MAX_DESC一一对应
+     * 耗时在不同时间段的计次数组。和{@link PUT_MESSAGE_ENTIRE_TIME_MAX_DESC}一一对应
      */
     private volatile AtomicLong[] putMessageDistributeTime;
     /**
@@ -168,6 +168,7 @@ public class StoreStatsService extends ServiceThread {
 
     /**
      * 设置putMessage所花费的时间
+     * 统计耗时在不同时间段的次数
      * @param value value
      */
     public void setPutMessageEntireTimeMax(long value) {

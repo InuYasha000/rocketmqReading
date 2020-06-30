@@ -61,7 +61,7 @@ public class RunningFlags {
     public boolean getAndMakeReadable() {
         boolean result = this.isReadable();
         if (!result) {
-            this.flagBits &= ~NOT_READABLE_BIT;
+            this.flagBits &= ~NOT_READABLE_BIT;//0
         }
         return result;
     }
@@ -85,7 +85,7 @@ public class RunningFlags {
     public boolean getAndMakeNotReadable() {
         boolean result = this.isReadable();
         if (result) {
-            this.flagBits |= NOT_READABLE_BIT;
+            this.flagBits |= NOT_READABLE_BIT;//1
         }
         return result;
     }
@@ -96,7 +96,7 @@ public class RunningFlags {
     public boolean getAndMakeWriteable() {
         boolean result = this.isWriteable();
         if (!result) {
-            this.flagBits &= ~NOT_WRITEABLE_BIT;
+            this.flagBits &= ~NOT_WRITEABLE_BIT;//0
         }
         return result;
     }
@@ -132,7 +132,7 @@ public class RunningFlags {
     public boolean getAndMakeNotWriteable() {
         boolean result = this.isWriteable();
         if (result) {
-            this.flagBits |= NOT_WRITEABLE_BIT;
+            this.flagBits |= NOT_WRITEABLE_BIT;//2
         }
         return result;
     }

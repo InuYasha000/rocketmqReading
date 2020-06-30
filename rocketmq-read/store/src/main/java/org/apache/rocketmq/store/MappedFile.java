@@ -66,12 +66,13 @@ public class MappedFile extends ReferenceResource {
 
 
     /**
-     * 写的偏移量
+     * 写的偏移量，和{@link committedPosition}关联起来理解
+     * 应该是{@link writeBuffer}的写入位置
      */
     protected final AtomicInteger wrotePosition = new AtomicInteger(0);
     /**
      * ADD BY ChenYang
-     * 提交的偏移量
+     * 提交的偏移量,和{@link wrotePosition}关联起来理解
      */
     protected final AtomicInteger committedPosition = new AtomicInteger(0);
     /**
@@ -88,7 +89,8 @@ public class MappedFile extends ReferenceResource {
     protected FileChannel fileChannel;
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
-     * 消息先会写到writeBuffer这个变量，然后会put到FileChannel
+     * 消息先会写到writeBuffer这个变量，然后会commit到FileChannel(这是一种commit方式)，详见{@link MappedFile#commit0(int)}
+     * 它的写入应该是{@link wrotePosition}
      */
     protected ByteBuffer writeBuffer = null;
     /**
@@ -424,10 +426,13 @@ public class MappedFile extends ReferenceResource {
                 int value = getReadPosition();
 
                 try {
+                    //mappedFile两种落盘方式
                     //We only append data to fileChannel or mappedByteBuffer, never both.
                     if (writeBuffer != null || this.fileChannel.position() != 0) {
+                        //写入内存字节缓冲区(writeBuffer)	从内存字节缓冲区(write buffer)提交(commit)到文件通道(fileChannel)	文件通道(fileChannel)flush
                         this.fileChannel.force(false);
                     } else {
+                        //写入映射文件字节缓冲区(mappedByteBuffer)	映射文件字节缓冲区(mappedByteBuffer)flush
                         this.mappedByteBuffer.force();
                     }
                 } catch (Throwable e) {
@@ -722,6 +727,7 @@ public class MappedFile extends ReferenceResource {
 
     /**
      * 有效数据的最大的写position
+     * 刷盘后获得最大读取的位置,也就是当前写的最大位置(刷盘后表示当前写都已经刷盘)
      * @return The max position which have valid data
      */
     public int getReadPosition() {

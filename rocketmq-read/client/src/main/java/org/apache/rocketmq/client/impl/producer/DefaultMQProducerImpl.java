@@ -105,7 +105,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
      */
     private final ConcurrentMap<String, TopicPublishInfo> topicPublishInfoTable = new ConcurrentHashMap<String, TopicPublishInfo>();
     /**
-     * 发送消息的勾子
+     * 发送消息后的勾子
      */
     private final ArrayList<SendMessageHook> sendMessageHookList = new ArrayList<SendMessageHook>();
     /**
@@ -148,6 +148,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.defaultMQProducer = defaultMQProducer;
         this.rpcHook = rpcHook;
     }
+
+    /**
+     * 注册消息发送钩子函数
+     * @param checkForbiddenHook
+     */
     public void registerCheckForbiddenHook(CheckForbiddenHook checkForbiddenHook) {
         this.checkForbiddenHookList.add(checkForbiddenHook);
         log.info("register a new checkForbiddenHook. hookName={}, allHookSize={}", checkForbiddenHook.hookName(),
@@ -900,8 +905,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     /**
      * 真正的发送消息。执行与broker的调用
-     * @param msg 消息
-     * @param mq 队列
+     * @param msg 待发送消息
+     * @param mq 要发送到的队列
      * @param communicationMode 发送模式
      * @param sendCallback 异步发送的话，回调勾子
      * @param topicPublishInfo topic发布详情
@@ -939,12 +944,13 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 if (!(msg instanceof MessageBatch)) {
                     // 设置唯一编号
                     //当前时间-starttime +(AtomicInteger)COUNTER
+                    //org.apache.rocketmq.common.message.MessageClientIDSetter.FIX_STRING  +  org.apache.rocketmq.common.message.MessageClientIDSetter.createUniqIDBuffer
                     MessageClientIDSetter.setUniqID(msg);
                 }
                 // 消息压缩
                 int sysFlag = 0;
                 boolean msgBodyCompressed = false;
-                if (this.tryToCompressMessage(msg)) {
+                if (this.tryToCompressMessage(msg)) {//使用java.util.zip.Deflater压缩，压缩等级是默认的5
                     //设置压缩标记
                     sysFlag |= MessageSysFlag.COMPRESSED_FLAG;
                     msgBodyCompressed = true;
@@ -999,18 +1005,18 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                  * 发送消息的请求header
                  */
                 SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
-                requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
-                requestHeader.setTopic(msg.getTopic());
-                requestHeader.setDefaultTopic(this.defaultMQProducer.getCreateTopicKey());
-                requestHeader.setDefaultTopicQueueNums(this.defaultMQProducer.getDefaultTopicQueueNums());
-                requestHeader.setQueueId(mq.getQueueId());
-                requestHeader.setSysFlag(sysFlag);
-                requestHeader.setBornTimestamp(System.currentTimeMillis());
-                requestHeader.setFlag(msg.getFlag());
-                requestHeader.setProperties(MessageDecoder.messageProperties2String(msg.getProperties()));
-                requestHeader.setReconsumeTimes(0);
+                requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());//生产者组
+                requestHeader.setTopic(msg.getTopic());//主题
+                requestHeader.setDefaultTopic(this.defaultMQProducer.getCreateTopicKey());//默认主题
+                requestHeader.setDefaultTopicQueueNums(this.defaultMQProducer.getDefaultTopicQueueNums());//该主题在单个Broker默认队列数
+                requestHeader.setQueueId(mq.getQueueId());//队列Id
+                requestHeader.setSysFlag(sysFlag);//消息系统标记
+                requestHeader.setBornTimestamp(System.currentTimeMillis());//消息发送时间
+                requestHeader.setFlag(msg.getFlag());//消息标记(这个标记在Rocketmq中没有做任何处理)
+                requestHeader.setProperties(MessageDecoder.messageProperties2String(msg.getProperties()));//消息拓展属性
+                requestHeader.setReconsumeTimes(0);//消息重试次数
                 requestHeader.setUnitMode(this.isUnitMode());
-                requestHeader.setBatch(msg instanceof MessageBatch);
+                requestHeader.setBatch(msg instanceof MessageBatch);//是否是批量消息
 
                 //如果topic是%RETRY%,对重试消息特殊处理
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
@@ -1020,7 +1026,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_RECONSUME_TIME);//清除
                     }
                     String maxReconsumeTimes = MessageAccessor.getMaxReconsumeTimes(msg);
-                    if (maxReconsumeTimes != null) {
+                    if (maxReconsumeTimes != null) {//最大重试次数
                         requestHeader.setMaxReconsumeTimes(Integer.valueOf(maxReconsumeTimes));
                         MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_MAX_RECONSUME_TIMES);
                     }
@@ -1036,6 +1042,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             //If msg body was compressed, msgbody should be reset using prevBody.
                             //Clone new message using commpressed message body and recover origin massage.
                             //Fix bug:https://github.com/apache/rocketmq-externals/issues/66
+                            //压缩后发送失败进行重发并且body大小仍然>=getCompressMsgBodyOverHowmuch(),body会被压缩两次,解决这个bug
                             tmpMessage = MessageAccessor.cloneMessage(msg);
                             msg.setBody(prevBody);//这里的prevBody是原先记录的(压缩情况下的)
                         }
@@ -1158,6 +1165,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public boolean hasCheckForbiddenHook() {
         return !checkForbiddenHookList.isEmpty();
     }
+
+    /**
+     * 执行消息发送前检验消息的钩子函数
+     * @param context
+     * @throws MQClientException
+     */
     public void executeCheckForbiddenHook(final CheckForbiddenContext context) throws MQClientException {
         if (hasCheckForbiddenHook()) {
             for (CheckForbiddenHook hook : checkForbiddenHookList) {
@@ -1173,6 +1186,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public boolean hasSendMessageHook() {
         return !this.sendMessageHookList.isEmpty();
     }
+
+    /**
+     * 执行消息发送前的钩子函数
+     * @param context
+     */
     public void executeSendMessageHookBefore(final SendMessageContext context) {
         if (!this.sendMessageHookList.isEmpty()) {
             for (SendMessageHook hook : this.sendMessageHookList) {
@@ -1187,6 +1205,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     /**
      * 执行sendMessageHookAfter
+     * 执行消息发送后的钩子函数
      * @param context ;
      */
     public void executeSendMessageHookAfter(final SendMessageContext context) {

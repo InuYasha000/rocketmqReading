@@ -28,6 +28,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
  * 2.发送消息时会选择延迟最低的broker来发送，提高效率
  * 3.broker延迟过高会自动减少它的消息分配，充分发挥所有服务器的能力
  * @author ;
+ * 消息失败策略，延迟实现的门面类
  */
 public class MQFaultStrategy {
     private final static InternalLogger log = ClientLogger.getLog();
@@ -149,6 +150,8 @@ public class MQFaultStrategy {
 
     /**
      * 根据当前计算的延迟currentLatency，选择notAvailableDuration对应的不可用时间
+     * 从{@link latencyMax}中找到第一比 currentLatency 小的索引，再到{@link notAvailableDuration}根据索引找出对应时间
+     * 比如：latencyMax = {50L, 100L, 550L, 1000L, 2000L, 3000L, 15000L}; currentLatency = 400L，那么取100L的索引1
      * @param currentLatency 当前延迟时间
      * @return ;
      */
