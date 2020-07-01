@@ -949,8 +949,15 @@ public class CommitLog {
         return -1;
     }
 
+    /**
+     * 根据偏移量和消息长度查询消息
+     * @param offset 偏移量
+     * @param size 消息长度
+     * @return
+     */
     public SelectMappedBufferResult getMessage(final long offset, final int size) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
+        //先找到偏移量为offset的mappedfile
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
         if (mappedFile != null) {
             int pos = (int) (offset % mappedFileSize);
@@ -959,6 +966,12 @@ public class CommitLog {
         return null;
     }
 
+    /**
+     * 获取下一个file的起始偏移量
+     * 减去重复的offset即可
+     * @param offset 上一个文件的起始偏移量
+     * @return
+     */
     public long rollNextFile(final long offset) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
         return offset + mappedFileSize - offset % mappedFileSize;

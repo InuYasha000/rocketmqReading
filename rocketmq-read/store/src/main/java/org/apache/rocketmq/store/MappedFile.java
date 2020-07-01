@@ -603,8 +603,9 @@ public class MappedFile extends ReferenceResource {
 
     /**
      * 查询MappedByteBuffer
-     * @param pos 位置
-     * @param size 写入大小
+     * 从该偏移量读取size长度
+     * @param pos 偏移量(offset%mappedFileSize)
+     * @param size 消息大小
      * @return ;
      */
     public SelectMappedBufferResult selectMappedBuffer(int pos, int size) {
@@ -635,7 +636,7 @@ public class MappedFile extends ReferenceResource {
 
     /**
      * 查询mappeedBuffer,根据位置。截取pos之后的所有的文件
-     * @param pos pos 。
+     * @param pos 偏移量 。
      * @return ;
      */
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
