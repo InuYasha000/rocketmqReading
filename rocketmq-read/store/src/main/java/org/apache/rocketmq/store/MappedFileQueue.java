@@ -56,15 +56,15 @@ public class MappedFileQueue {
      */
     private final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<MappedFile>();
     /**
-     * 分配MappedFile线程
+     * 分配MappedFile服务类
      */
     private final AllocateMappedFileService allocateMappedFileService;
     /**
-     * flushedwhere?已经刷盘到哪里的一个记录
+     * 刷盘指针，已经刷盘到哪里的一个记录，该指针之前的记录已经全部刷盘
      */
     private long flushedWhere = 0;
     /**
-     * 已经提交到哪里的一个记录
+     * 提交指针，已经提交到哪里的一个记录，大于等于{@link flushedWhere}
      */
     private long committedWhere = 0;
     /**
@@ -108,7 +108,7 @@ public class MappedFileQueue {
     }
 
     /**
-     * 根据时间戳获取一个mappedFileSize
+     * 找更新时间大于timestamp的文件，否则返回最后一个
      * @param timestamp 时间戳
      * @return ;
      */
@@ -602,6 +602,8 @@ public class MappedFileQueue {
      * @param offset Offset.
      * @param returnFirstOnNotFound If the mapped file is not found, then return the first one.
      * @return Mapped file or null (when not found and returnFirstOnNotFound is <code>false</code>).
+     * 第一个MappedFile的偏移量不一定是00000000000000000000(20个0)，因为储存目录下的文件都会创建内存映射文件，
+     * 如果不进行定时删除，会造成资源浪费，所以下面根据offset获取所在文件的索引会减去一个第一个文件的起始偏移量
      */
     public MappedFile findMappedFileByOffset(final long offset, final boolean returnFirstOnNotFound) {
         try {

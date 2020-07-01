@@ -59,6 +59,17 @@ import sun.nio.ch.DirectBuffer;
  * 提交到PageCache中的消息是不会丢失的，
  * 但存在堆外内存(DirectByteBuffer)中但还未提交到PageCache中的这部分消息，将
  * 会丢失。但通常情况下，RocketMQ进程退出的可能性不大。
+ *
+ * 与数据存储相关的还有TransientStorePool这一实现。通过MessageStoreConfig.transientStorePoolEnable可以进行配置，不过只在异步刷盘模式下生效。
+ *
+ * TransientStorePool与MappedFile在数据处理上的差异在什么地方呢？
+ * 分析其代码，TransientStorePool会通过ByteBuffer.allocateDirect调用直接申请对外内存，消息数据在写入内存的时候是写入预申请的内存中。
+ * 在异步刷盘的时候，再由刷盘线程将这些内存中的修改写入文件。
+ *
+ * 那么与直接使用MappedByteBuffer相比差别在什么地方呢？
+ * 修改MappedByteBuffer实际会将数据写入文件对应的Page Cache中，而TransientStorePool方案下写入的则为纯粹的内存。
+ * 因此在消息写入操作上会更快，因此能更少的占用CommitLog.putMessageLock锁，从而能够提升消息处理量。
+ * 使用TransientStorePool方案的缺陷主要在于在异常崩溃的情况下回丢失更多的消息。
  * @author ;
  */
 public class TransientStorePool {

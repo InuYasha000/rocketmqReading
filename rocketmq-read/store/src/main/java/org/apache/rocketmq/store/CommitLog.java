@@ -1414,7 +1414,7 @@ public class CommitLog {
             // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
             // PHY OFFSET
-            //物理偏移量
+            //物理偏移量,也就是在整个文件夹里面从最开始的mapperFile开始的偏移量
             long wroteOffset = fileFromOffset + byteBuffer.position();
 
             this.resetByteBuffer(hostHolder, 8);
@@ -1429,6 +1429,7 @@ public class CommitLog {
             keyBuilder.append('-');
             keyBuilder.append(msgInner.getQueueId());
             String key = keyBuilder.toString();
+            //获取该消息在消息队列的偏移量
             Long queueOffset = CommitLog.this.topicQueueTable.get(key);
             if (null == queueOffset) {
                 queueOffset = 0L;
@@ -1491,7 +1492,6 @@ public class CommitLog {
                 // Here the length of the specially set maxBlank
                 final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
                 //从msgStoreItemMemory数组中的offset到offset+length区域读取数据并使用相对写写入此byteBuffer
-                //TODO 不明白为什么不写魔数？？
                 byteBuffer.put(this.msgStoreItemMemory.array(), 0, maxBlank);
                 return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset, maxBlank, msgId, msgInner.getStoreTimestamp(),
                     queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);

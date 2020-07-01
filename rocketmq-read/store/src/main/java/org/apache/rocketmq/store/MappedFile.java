@@ -45,21 +45,27 @@ import sun.nio.ch.DirectBuffer;
  * MappedFile
  * @author ;
  */
-//方式一	写入内存字节缓冲区(writeBuffer) 从内存字节缓冲区(write buffer)提交(commit)到文件通道(fileChannel)  文件通道(fileChannel)flush
-//方式二 写入映射文件字节缓冲区(mappedByteBuffer) 映射文件字节缓冲区(mappedByteBuffer)flush
+
+/**
+ * {@link MappedFile#flush(int)}
+ * 方式一 写入内存字节缓冲区(writeBuffer) 从内存字节缓冲区(write buffer)提交(commit)到文件通道(fileChannel)  文件通道(fileChannel)flush
+ * 方式二 写入映射文件字节缓冲区(mappedByteBuffer) 映射文件字节缓冲区(mappedByteBuffer)flush
+  */
 public class MappedFile extends ReferenceResource {
     /**
-     * osPache_size大小为4kb
+     * osPache_size大小为4kb,操作系统每页大小
      */
     public static final int OS_PAGE_SIZE = 1024 * 4;
     protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     /**
      * 总共映射的虚拟内存的大小
+     * 当前JVM实例中MappedFile对象个数
      */
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
     /**
      * 总共映射的文件数量
+     * 当前JVM实例中MappedFile对象个数
      */
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
 
@@ -73,6 +79,7 @@ public class MappedFile extends ReferenceResource {
     /**
      * ADD BY ChenYang
      * 提交的偏移量,和{@link wrotePosition}关联起来理解
+     * 如果开启了{@link transientStorePool}，数据会储存到transientStorePool中，然后提交到内存映射ByteBuffer中，再刷写到磁盘
      */
     protected final AtomicInteger committedPosition = new AtomicInteger(0);
     /**
@@ -80,7 +87,7 @@ public class MappedFile extends ReferenceResource {
      */
     private final AtomicInteger flushedPosition = new AtomicInteger(0);
     /**
-     * 文件大小
+     * 文件大小，单个MappedFile大小
      */
     protected int fileSize;
     /**
@@ -90,7 +97,9 @@ public class MappedFile extends ReferenceResource {
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
      * 消息先会写到writeBuffer这个变量，然后会commit到FileChannel(这是一种commit方式)，详见{@link MappedFile#commit0(int)}
-     * 它的写入应该是{@link wrotePosition}
+     * 它的写入位置应该是{@link wrotePosition}
+     * 它的写入位置这个变量并不是整个文件夹下面总的物理偏移量，应该是最后一个文件的写位置
+     * 见{@link MappedFileQueue#getMaxOffset()}这个方法获取最大偏移量解释了这一点
      */
     protected ByteBuffer writeBuffer = null;
     /**
@@ -102,7 +111,9 @@ public class MappedFile extends ReferenceResource {
      */
     private String fileName;
     /**
-     * 文件起始偏移量
+     * 文件起始偏移量，也就是当前MappedFile的偏移量
+     * 见{@link MappedFileQueue#findMappedFileByOffset(long, boolean)}
+     * 其实就是{@link fileName},见{@link MappedFile#init(java.lang.String, int)}
      */
     private long fileFromOffset;
     /**
@@ -114,11 +125,11 @@ public class MappedFile extends ReferenceResource {
      */
     private MappedByteBuffer mappedByteBuffer;
     /**
-     * 存储时间戳
+     * 文件最后一次内容写入时间存储时间戳
      */
     private volatile long storeTimestamp = 0;
     /**
-     * 是队列里第一个创建出的mappedFile
+     * 是否是是队列里第一个创建出的mappedFile
      */
     private boolean firstCreateInQueue = false;
 
@@ -265,6 +276,7 @@ public class MappedFile extends ReferenceResource {
 
         try {
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
+            //将文件内容使用NIO的内存映射Buffer将文件映射到内存中
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
             TOTAL_MAPPED_FILES.incrementAndGet();
@@ -291,7 +303,7 @@ public class MappedFile extends ReferenceResource {
     }
 
     /**
-     * 获取文件大写
+     * 获取文件大小
      * @return ;
      */
     public int getFileSize() {
@@ -731,7 +743,7 @@ public class MappedFile extends ReferenceResource {
      * @return The max position which have valid data
      */
     public int getReadPosition() {
-        //==null情况是commit提交时==null
+        //null情况是commit提交时为null
         return this.writeBuffer == null ? this.wrotePosition.get() : this.committedPosition.get();
     }
 
