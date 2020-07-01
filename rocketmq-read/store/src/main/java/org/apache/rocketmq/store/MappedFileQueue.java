@@ -45,6 +45,7 @@ public class MappedFileQueue {
     private static final int DELETE_FILES_BATCH_MAX = 10;
     /**
      * 存储的路径
+     * 其实是{@link org.apache.rocketmq.store.config.MessageStoreConfig#storePathCommitLog}
      */
     private final String storePath;
     /**
@@ -177,6 +178,7 @@ public class MappedFileQueue {
 
     /**
      * 清除过期的文件
+     * 就是删{@link MappedFileQueue#mappedFiles}
      * @param files files
      */
     void deleteExpiredFile(List<MappedFile> files) {
@@ -203,7 +205,7 @@ public class MappedFileQueue {
     }
 
     /**
-     * load文件
+     * 加载commitlog文件
      * @return ;
      */
     public boolean load() {
@@ -455,7 +457,7 @@ public class MappedFileQueue {
     /**
      * 通过过期时间delete过期的文件
      * @param expiredTime 过期时间
-     * @param deleteFilesInterval 删除文件周期
+     * @param deleteFilesInterval 删除文件周期，删除一个文件后等一下再删除一个文件
      * @param intervalForcibly 周期
      * @param cleanImmediately 是否立刻清理
      * @return ;
@@ -477,7 +479,7 @@ public class MappedFileQueue {
         if (null != mfs) {
             for (int i = 0; i < mfsLength; i++) {
                 MappedFile mappedFile = (MappedFile) mfs[i];
-                //获取文件最大的存储的时间戳
+                //获取文件最大的存储的时间戳(最后更新时间+存活时间，也就是72小时)
                 long liveMaxTimestamp = mappedFile.getLastModifiedTimestamp() + expiredTime;
                 //如果当前时间戳已经大于这个时间戳或者cleanImmediately
                 if (System.currentTimeMillis() >= liveMaxTimestamp || cleanImmediately) {
@@ -492,6 +494,7 @@ public class MappedFileQueue {
 
                         if (deleteFilesInterval > 0 && (i + 1) < mfsLength) {
                             try {
+                                //这里保证了deleteFilesInterval的参数意义
                                 Thread.sleep(deleteFilesInterval);
                             } catch (InterruptedException e) {
                             }

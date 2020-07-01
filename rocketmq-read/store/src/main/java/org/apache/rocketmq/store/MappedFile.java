@@ -635,7 +635,7 @@ public class MappedFile extends ReferenceResource {
     }
 
     /**
-     * 查询mappeedBuffer,根据位置。截取pos之后的所有的文件
+     * 截取pos之后的所有的mappeedBuffer文件
      * @param pos 偏移量 。
      * @return ;
      */
@@ -741,6 +741,7 @@ public class MappedFile extends ReferenceResource {
     /**
      * 有效数据的最大的写position
      * 刷盘后获得最大读取的位置,也就是当前写的最大位置(刷盘后表示当前写都已经刷盘)
+     * 也就是返回去当前写指针的位置(比如返回当前mappedFile所以内容就可以用这个值)
      * @return The max position which have valid data
      */
     public int getReadPosition() {

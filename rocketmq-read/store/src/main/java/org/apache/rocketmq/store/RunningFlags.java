@@ -43,7 +43,7 @@ public class RunningFlags {
     private static final int DISK_FULL_BIT = 1 << 4;
 
     /**
-     * 运行时的flag
+     * 运行时的flag,也就是上面这些状态的具体显示值，比如磁盘满了的时候，就是DISK_FULL_BIT，见{@link RunningFlags#getAndMakeDiskFull()}
      */
     private volatile int flagBits = 0;
 

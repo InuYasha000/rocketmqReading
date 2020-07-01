@@ -47,15 +47,15 @@ public class StoreCheckpoint {
      */
     private final MappedByteBuffer mappedByteBuffer;
     /**
-     * 物理消息时间戳
+     * 物理消息时间戳,commitlog文件刷盘时间点，8字节
      */
     private volatile long physicMsgTimestamp = 0;
     /**
-     * 逻辑消息的时间戳
+     * 逻辑消息的时间戳，消息消费队列文件刷盘时间点，8字节
      */
     private volatile long logicsMsgTimestamp = 0;
     /**
-     * 索引消息的时间戳
+     * 索引消息的时间戳，索引文件刷盘时间点，8字节
      */
     private volatile long indexMsgTimestamp = 0;
 

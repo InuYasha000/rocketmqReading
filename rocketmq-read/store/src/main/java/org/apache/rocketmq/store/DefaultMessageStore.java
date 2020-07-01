@@ -247,10 +247,12 @@ public class DefaultMessageStore implements MessageStore {
 
         try {
             //上一次退出是否是正常退出。临时文件不存在代表是正常退出
+            //Broker在启动时创建了${ROCKET_HOME}/store/abort文件，退出时通过注册JVM钩子函数删除abort文件，所以Broker非正常退出就表示这个abort文件存在
             boolean lastExitOK = !this.isTempFileExist();
             log.info("last shutdown {}", lastExitOK ? "normally" : "abnormally");
 
             //scheduleMessageService.load
+            //rocketmq定时消息相关
             if (null != scheduleMessageService) {
                 result = result && this.scheduleMessageService.load();
             }
@@ -317,9 +319,9 @@ public class DefaultMessageStore implements MessageStore {
 
         //是否允许重复复制
         if (this.getMessageStoreConfig().isDuplicationEnable()) {
-            this.reputMessageService.setReputFromOffset(this.commitLog.getConfirmOffset());
+            this.reputMessageService.setReputFromOffset(this.commitLog.getConfirmOffset());//commitlog的提交指针
         } else {
-            this.reputMessageService.setReputFromOffset(this.commitLog.getMaxOffset());
+            this.reputMessageService.setReputFromOffset(this.commitLog.getMaxOffset());//commmitlog的内存最大偏移量
         }
         this.reputMessageService.start();
 
@@ -1486,6 +1488,7 @@ public class DefaultMessageStore implements MessageStore {
 
     private void addScheduleTask() {
 
+        //每隔10秒检测是否需要清除过期文件
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -1551,6 +1554,12 @@ public class DefaultMessageStore implements MessageStore {
         return file.exists();
     }
 
+    /**
+     * 加载消息消费队列
+     * 遍历消息消费队列根目录，获取Broker储存的所有主题
+     * 然后遍历该主题下的所有消息消费队列，构建ConsumeQueue对象
+     * @return
+     */
     private boolean loadConsumeQueue() {
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()));
         File[] fileTopicList = dirLogic.listFiles();
@@ -1825,7 +1834,7 @@ public class DefaultMessageStore implements MessageStore {
              * 销毁MappedFile被拒绝的最大存活时间，默认120s。
              * 清除过期文件线程在初次销毁mappedfile时，
              * 如果该文件被其他线程引用，引用次数大于0.
-             * 则设置MappedFile的可用状态为false，
+             * 则设置MappedFile的可用状态为false，会阻止此次删除任务，
              * 并设置第一次删除时间，下一次清理任务到达时，
              * 如果系统时间大于初次删除时间加上本参数，
              * 则将ref次数一次减1000，
@@ -1833,8 +1842,11 @@ public class DefaultMessageStore implements MessageStore {
              */
             int destroyMapedFileIntervalForcibly = DefaultMessageStore.this.getMessageStoreConfig().getDestroyMapedFileIntervalForcibly();
 
+            //指定删除文件的时间点
             boolean timeup = this.isTimeToDelete();
+            //空间是否充足
             boolean spacefull = this.isSpaceToDelete();
+            //手动触发
             boolean manualDelete = this.manualDeleteFileSeveralTimes > 0;
 
             if (timeup || spacefull || manualDelete) {
@@ -1851,6 +1863,7 @@ public class DefaultMessageStore implements MessageStore {
                     manualDeleteFileSeveralTimes,
                     cleanAtOnce);
 
+                //小时-->毫秒
                 fileReservedTime *= 60 * 60 * 1000;
 
                 deleteCount = DefaultMessageStore.this.commitLog.deleteExpiredFile(fileReservedTime, deletePhysicFilesInterval,
@@ -1894,15 +1907,17 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         /**
-         * isSpace去delete
+         * 判断磁盘空间是否充足，是否需要删除过期文件
          * @return ;
          */
         private boolean isSpaceToDelete() {
             double ratio = DefaultMessageStore.this.getMessageStoreConfig().getDiskMaxUsedSpaceRatio() / 100.0;
             cleanImmediately = false;
             {
+                //commitlog的存储路径
                 String storePathPhysic = DefaultMessageStore.this.getMessageStoreConfig().getStorePathCommitLog();
                 double physicRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathPhysic);
+                //磁盘空间使用率超过diskSpaceWarningLevelRatio(默认是90%)
                 if (physicRatio > diskSpaceWarningLevelRatio) {
                     boolean diskok = DefaultMessageStore.this.runningFlags.getAndMakeDiskFull();
                     if (diskok) {
@@ -1926,6 +1941,7 @@ public class DefaultMessageStore implements MessageStore {
             }
 
             {
+                //store目录
                 String storePathLogics = StorePathConfigHelper
                     .getStorePathConsumeQueue(DefaultMessageStore.this.getMessageStoreConfig().getStorePathRootDir());
                 double logicsRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathLogics);
@@ -2152,6 +2168,7 @@ public class DefaultMessageStore implements MessageStore {
                             if (dispatchRequest.isSuccess()) {
                                 if (size > 0) {//读取到消息了（前面说过ConsumeQueue 存储在 MappedFile 的内容两种：MESSAGE_POSITION_INFO 和BLANK ）
                                     // 读取Message
+                                    //分别调用CommitLogDispatcherBuildIndex和CommitLogDispatcherBuildConsumeQueue构建索引文件和消息消费文件
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
 
                                     // 通知有新消息
@@ -2214,6 +2231,7 @@ public class DefaultMessageStore implements MessageStore {
                 try {
                     Thread.sleep(1);
                     //循环调用
+                    //每隔1秒尝试推送消息到消息消费队列和索引文件
                     this.doReput();
                 } catch (Exception e) {
                     DefaultMessageStore.log.warn(this.getServiceName() + " service has exception. ", e);

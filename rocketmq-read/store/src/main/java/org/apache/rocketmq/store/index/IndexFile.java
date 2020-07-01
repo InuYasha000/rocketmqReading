@@ -35,7 +35,7 @@ public class IndexFile {
 
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     /**
-     * 哈希slot个数占4个字节
+     * 哈希slot每个占4个字节
      */
     private static int hashSlotSize = 4;
     /**
@@ -52,7 +52,7 @@ public class IndexFile {
      */
     private final int hashSlotNum;
     /**
-     * index个数
+     * index个数，允许最大条目数
      */
     private final int indexNum;
     /**
@@ -144,7 +144,7 @@ public class IndexFile {
 
     /**
      * 添加信息
-     * @param key key
+     * @param key key,消息索引
      * @param phyOffset 物理偏移量
      * @param storeTimestamp 消息存储时间戳
      * @return ;
@@ -152,9 +152,10 @@ public class IndexFile {
     public boolean putKey(final String key, final long phyOffset, final long storeTimestamp) {
 
         if (this.indexHeader.getIndexCount() < this.indexNum) {
-            int keyHash = indexKeyHashMethod(key);
+            int keyHash = indexKeyHashMethod(key);//哈希函数取绝对值
             int slotPos = keyHash % this.hashSlotNum;
-            //找到keyHash对应的文件中要存储的位置
+            //找到keyHash对应的文件中要存储的位置(IndexHeader长度+下标*每个hash槽的字节大小)
+            //hash槽的物理地址
             int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize;
 
             FileLock fileLock = null;
@@ -167,7 +168,7 @@ public class IndexFile {
                     slotValue = invalidIndex;
                 }
 
-                //6、计算当前msg的存储时间和第一条msg相差秒数
+                //计算当前msg的存储时间和第一条msg相差秒数
                 long timeDiff = storeTimestamp - this.indexHeader.getBeginTimestamp();
                 timeDiff = timeDiff / 1000;
 
@@ -179,7 +180,7 @@ public class IndexFile {
                     timeDiff = 0;
                 }
 
-                //计算获取index的位置
+                //计算新添加条目的起始物理偏移量
                 int absIndexPos =
                     IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * hashSlotSize
                         + this.indexHeader.getIndexCount() * indexSize;
@@ -233,7 +234,7 @@ public class IndexFile {
     }
 
     /**
-     * indexKey的哈希函数
+     * indexKey的哈希函数的绝对值
      * @param key key
      * @return ;
      */
@@ -275,7 +276,7 @@ public class IndexFile {
     /**
      * select 物理偏移量
      * @param phyOffsets 物理偏移量。要往里add数据
-     * @param key key 最大数量
+     * @param key key 索引
      * @param maxNum 查询最大数据
      * @param begin 开始
      * @param end 结束

@@ -235,7 +235,7 @@ public class CommitLog {
 
     /**
      * When the normal exit, data recovery, all memory data have been flush
-     * 正常恢复
+     * broker正常停止文件恢复
      */
     public void recoverNormally(long maxPhyOffsetOfConsumeQueue) {
 
@@ -243,7 +243,7 @@ public class CommitLog {
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
         if (!mappedFiles.isEmpty()) {
             // Began to recover from the last third file
-            int index = mappedFiles.size() - 3;
+            int index = mappedFiles.size() - 3;//从倒数第三个开始恢复
             if (index < 0) {
                 index = 0;
             }
@@ -769,9 +769,11 @@ public class CommitLog {
      */
     public void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult, MessageExt messageExt) {
         // Synchronization flush
+        //同步刷盘
         if (FlushDiskType.SYNC_FLUSH == this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
             final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
             if (messageExt.isWaitStoreMsgOK()) {
+                //构建GroupCommitRequest提交到GroupCommitService
                 GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes());
                 service.putRequest(request);
                 boolean flushOK = request.waitForFlush(this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
@@ -785,6 +787,7 @@ public class CommitLog {
             }
         }
         // Asynchronous flush
+        //异步刷盘
         else {
             if (!this.defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
                 flushCommitLogService.wakeup();
@@ -1211,8 +1214,10 @@ public class CommitLog {
      * @author ;
      */
     public static class GroupCommitRequest {
+        //刷盘点偏移量
         private final long nextOffset;
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
+        //刷盘结果
         private volatile boolean flushOK = false;
 
         public GroupCommitRequest(long nextOffset) {

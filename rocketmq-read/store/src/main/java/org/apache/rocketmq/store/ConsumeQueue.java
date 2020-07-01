@@ -31,7 +31,6 @@ import org.apache.rocketmq.store.config.StorePathConfigHelper;
 public class ConsumeQueue {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     /**
-     * 前文提到每个条目固定20个字节
      * 存储的每个条目都是固定的20个字节
      * 1:MESSAGE_POSITION_INFO :commitlog offset:8个字节，size:消息长度，四个字节。 message Tags Hashcode:8个字节，总计20个字节
      * 2:BLANK : 文件前置空白占位。当历史 Message 被删除时，需要用 BLANK占位被删除的消息。
@@ -209,12 +208,13 @@ public class ConsumeQueue {
 
     /**
      * 获取Offset在队列里根据时间
+     * 二分法查找
      * @param timestamp 时间戳
      * @return ;
      */
     public long getOffsetInQueueByTime(final long timestamp) {
 
-        //根据时间戳获取一个文件
+        //找更新时间大于timestamp的文件，否则返回最后一个
         MappedFile mappedFile = this.mappedFileQueue.getMappedFileByTime(timestamp);
         if (mappedFile != null) {
             long offset = 0;
@@ -273,17 +273,18 @@ public class ConsumeQueue {
                     if (targetOffset != -1) {
                         offset = targetOffset;
                     } else {
-                        if (leftIndexValue == -1) {
+                        if (leftIndexValue == -1) {//一直在向左移动，说明timestamp小，所以返回大于timestamp但最接近timestamp的偏移量
                             offset = rightOffset;
-                        } else if (rightIndexValue == -1) {
+                        } else if (rightIndexValue == -1) {//一直在向右移动，说明timestamp大，所以返回小于timestamp但最接近timestamp的偏移量
 
                             offset = leftOffset;
-                        } else {
+                        } else {//选择最靠近timestamp的index
                             offset =
                                 Math.abs(timestamp - leftIndexValue) > Math.abs(timestamp
                                     - rightIndexValue) ? rightOffset : leftOffset;
                         }
                     }
+                    //返回的应该是consumeQueue的下标
                     return (mappedFile.getFileFromOffset() + offset) / CQ_STORE_UNIT_SIZE;
                 } finally {
                     sbr.release();
@@ -618,6 +619,11 @@ public class ConsumeQueue {
         }
     }
 
+    /**
+     * 实际就是得出偏移量 startIndex * {@link CQ_STORE_UNIT_SIZE}
+     * @param startIndex ConsumeQueue的index
+     * @return
+     */
     public SelectMappedBufferResult getIndexBuffer(final long startIndex) {
         int mappedFileSize = this.mappedFileSize;
         long offset = startIndex * CQ_STORE_UNIT_SIZE;

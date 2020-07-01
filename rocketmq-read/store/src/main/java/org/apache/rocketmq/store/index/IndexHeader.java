@@ -30,27 +30,27 @@ public class IndexHeader {
      */
     public static final int INDEX_HEADER_SIZE = 40;
     /**
-     * 8位 该索引文件的第一个消息(Message)的存储时间(落盘时间)
+     * 8字节 该索引文件的第一个消息(Message)的存储时间(落盘时间)
      */
     private static int beginTimestampIndex = 0;
     /**
-     * 8位 该索引文件的最后一个消息(Message)的存储时间(落盘时间)
+     * 8字节 该索引文件的最后一个消息(Message)的存储时间(落盘时间)
      */
     private static int endTimestampIndex = 8;
     /**
-     * 8位 该索引文件第一个消息(Message)的在CommitLog(消息存储文件)的物理位置偏移量(可以通过该物理偏移直接获取到该消息)
+     * 8字节 该索引文件第一个消息(Message)的在CommitLog(消息存储文件)的物理位置偏移量(可以通过该物理偏移直接获取到该消息)
      */
     private static int beginPhyoffsetIndex = 16;
     /**
-     * 8位 该索引文件最后一个消息(Message)的在CommitLog(消息存储文件)的物理位置偏移量
+     * 8字节 该索引文件最后一个消息(Message)的在CommitLog(消息存储文件)的物理位置偏移量
      */
     private static int endPhyoffsetIndex = 24;
     /**
-     * 4位 该索引文件目前的hash slot的个数
+     * 4字节 该索引文件目前的hash slot的个数，不是hash槽的使用个数
      */
     private static int hashSlotcountIndex = 32;
     /**
-     * 4位 索引文件目前的索引个数
+     * 4字节 索引文件目前的索引个数
      */
     private static int indexCountIndex = 36;
     /**
@@ -78,7 +78,7 @@ public class IndexHeader {
      */
     private AtomicInteger hashSlotCount = new AtomicInteger(0);
     /**
-     * 索引文件的个数
+     * 索引文件的个数，已经使用的条目数
      */
     private AtomicInteger indexCount = new AtomicInteger(1);
 
