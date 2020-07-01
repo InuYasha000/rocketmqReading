@@ -85,7 +85,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * </p>
      *
      * This field defaults to clustering.
-     * 消息的消费模式，默认是集群模式
+     * 消息的消费模式，分为集群模式，广播模式，默认是集群模式
      */
     private MessageModel messageModel = MessageModel.CLUSTERING;
 
@@ -135,6 +135,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Queue allocation algorithm specifying how message queues are allocated to each consumer clients.
      * 分配队列的策略
+     * 集群模式下的消息队列负载均衡
      */
     private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
 
@@ -152,19 +153,19 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     /**
      * Offset Storage
-     * 偏移量存储
+     * 消息消费进度储存器
      */
     private OffsetStore offsetStore;
 
     /**
      * Minimum consumer thread number
-     * 消费最小线程数
+     * 消费者最小线程数
      */
     private int consumeThreadMin = 20;
 
     /**
      * Max consumer thread number
-     * 最大消费线程数
+     * 消费者最大消费线程数，因为消费者线程池使用无界队列，所以消费者线程个数最多只有{@link consumeThreadMin}
      */
     private int consumeThreadMax = 64;
 
@@ -177,6 +178,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Concurrently max span offset.it has no effect on sequential consumption
      * 并发消费下，单条consume queue队列允许的最大offset跨度，达到则触发流控	2000
+     * 表示消息处理队列中偏移量最大的消息与偏移量最小的消息跨度超过2000则延迟50ms再拉取消息
      * 注：只对并发消费（ConsumeMessageConcurrentlyService）生效
      */
     private int consumeConcurrentlyMaxSpan = 2000;
@@ -187,7 +189,11 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * onsume queue流控的阈值	1000
      * 每条consume queue的消息拉取下来后会缓存到本地，消费结束会删除。
      * 用于topic级别的流量控制,当累积达到一个阈值后，会触发该consume queue的流控。
-     * 是拉消息本地队列缓存消息最大数，用于topic级别的流量控制，控制单位为消息个数，取值范围都是 [1, 65535]，默认是1000。如果设置了pullThresholdForTopic，就是限制了topic级别的消息缓存数（通常没有），那么会将本地每个queue的缓存数更新为pullThresholdForTopic / currentQueueCount 限制总数 / 队列数。
+     * 是拉消息本地队列缓存消息最大数，用于topic级别的流量控制，控制单位为消息个数，取值范围都是 [1, 65535]，默认是1000。
+     * 如果设置了pullThresholdForTopic，就是限制了topic级别的消息缓存数（通常没有），
+     * 那么会将本地每个queue的缓存数更新为pullThresholdForTopic / currentQueueCount 限制总数 / 队列数。
+     * 1000次流控后打印日志
+     *
      */
     private int pullThresholdForQueue = 1000;
 
@@ -248,6 +254,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     /**
      * Whether update subscription relationship when every pull
+     * 是否每次订阅都更新订阅信息
      */
     private boolean postSubscriptionWhenPull = false;
 
@@ -268,13 +275,13 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     /**
      * Suspending pulling time for cases requiring slow pulling like flow-control scenario.
-     * 流控参数，挂起当前队列超时时间
+     * 流控参数，挂起当前队列超时时间，延迟把该队列的消息提交到消费者线程的等待时间，默认1秒
      */
     private long suspendCurrentQueueTimeMillis = 1000;
 
     /**
      * Maximum amount of time in minutes a message may block the consuming thread.
-     * 消费超时：默认值：15，单位分钟
+     * 消息消费超时时间：默认值：15，单位分钟
      */
     private long consumeTimeout = 15;
 

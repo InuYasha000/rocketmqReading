@@ -37,7 +37,7 @@ public enum ConsumeFromWhere {
      */
     CONSUME_FROM_FIRST_OFFSET,
     /**
-     * 第一次启动从指定时间点位置消费，后续再启动接着上次消费的进度开始消费
+     * 第一次启动从消费者启动时间戳位置消费，后续再启动接着上次消费的进度开始消费
      */
     CONSUME_FROM_TIMESTAMP,
 }
