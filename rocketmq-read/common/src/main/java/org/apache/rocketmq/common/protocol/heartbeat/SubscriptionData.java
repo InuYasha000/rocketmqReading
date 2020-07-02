@@ -37,7 +37,7 @@ public class SubscriptionData implements Comparable<SubscriptionData> {
      */
     public final static String SUB_ALL = "*";
     /**
-     * 类拦截模式，false
+     * 是否是类过滤模式，false
      */
     private boolean classFilterMode = false;
     /**
@@ -45,13 +45,14 @@ public class SubscriptionData implements Comparable<SubscriptionData> {
      */
     private String topic;
     /**
-     * sql92的表达式
+     * 消息过滤表达式，多个用竖线隔开，"TAGA||TAGB",不是类过滤模式
      */
     private String subString;
     /**
      * tag的set集合和对应的hashcode集合
      * 见{@link FilterAPI#buildSubscriptionData(java.lang.String, java.lang.String, java.lang.String)}
      */
+    //消息过滤tag集合，消息端过滤时进行消息过滤的依据
     private Set<String> tagsSet = new HashSet<String>();
     private Set<Integer> codeSet = new HashSet<Integer>();
     private long subVersion = System.currentTimeMillis();

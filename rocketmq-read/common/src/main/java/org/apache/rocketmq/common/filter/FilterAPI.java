@@ -74,7 +74,7 @@ public class FilterAPI {
                         if (trimString.length() > 0) {
                             //tag
                             subscriptionData.getTagsSet().add(trimString);
-                            //hashcode
+                            //hashcode,储存hashcode在于将consumequeue设计为定长结构
                             subscriptionData.getCodeSet().add(trimString.hashCode());
                         }
                     }

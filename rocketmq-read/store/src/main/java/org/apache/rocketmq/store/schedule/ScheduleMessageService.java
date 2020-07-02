@@ -41,6 +41,7 @@ import org.apache.rocketmq.store.MessageExtBrokerInner;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 
 /**
@@ -54,17 +55,20 @@ public class ScheduleMessageService extends ConfigManager {
      * 延时队列topic
      */
     public static final String SCHEDULE_TOPIC = "SCHEDULE_TOPIC_XXXX";
-    private static final long FIRST_DELAY_TIME = 1000L;
-    private static final long DELAY_FOR_A_WHILE = 100L;
-    private static final long DELAY_FOR_A_PERIOD = 10000L;
+    private static final long FIRST_DELAY_TIME = 1000L;//第一次调度时延迟的时间
+    private static final long DELAY_FOR_A_WHILE = 100L;//每一延时级别调度一次后延迟时间再放入调度池
+    private static final long DELAY_FOR_A_PERIOD = 10000L;//发送异常后延迟该时间后再继续参与调度
 
     /**
      * 延迟level，延迟对应的毫秒
+     * 解析"1s 5s 10s 30s 1m 2m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h"转换为
+     * {1:1000,2:5000,3:10000,...}
      */
     private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
         new ConcurrentHashMap<Integer, Long>(32);
     /**
      * 延迟level，offset
+     * key:{@link delayLevelTable}的key
      */
     private final ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable =
         new ConcurrentHashMap<Integer, Long>(32);
@@ -73,6 +77,9 @@ public class ScheduleMessageService extends ConfigManager {
 
     private final DefaultMessageStore defaultMessageStore;
 
+    /**
+     * {@link MessageStoreConfig#messageDelayLevel}中最大延迟级别
+     */
     private int maxDelayLevel;
 
     public ScheduleMessageService(final DefaultMessageStore defaultMessageStore) {
@@ -90,6 +97,7 @@ public class ScheduleMessageService extends ConfigManager {
 
     /**
      * 延迟level计算队列id
+     * 延迟队列id=延迟级别减1
      * @param delayLevel ;
      * @return ；
      */
@@ -275,9 +283,9 @@ public class ScheduleMessageService extends ConfigManager {
                         int i = 0;
                         ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
                         for (; i < bufferCQ.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
-                            long offsetPy = bufferCQ.getByteBuffer().getLong();
-                            int sizePy = bufferCQ.getByteBuffer().getInt();
-                            long tagsCode = bufferCQ.getByteBuffer().getLong();
+                            long offsetPy = bufferCQ.getByteBuffer().getLong();//物理偏移量
+                            int sizePy = bufferCQ.getByteBuffer().getInt();//消息长度
+                            long tagsCode = bufferCQ.getByteBuffer().getLong();//消息tag hashcode
 
                             if (cq.isExtAddr(tagsCode)) {
                                 if (cq.getExt(tagsCode, cqExtUnit)) {
