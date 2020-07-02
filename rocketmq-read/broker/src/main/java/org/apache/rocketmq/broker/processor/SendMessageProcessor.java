@@ -21,6 +21,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.mqtrace.ConsumeMessageContext;
 import org.apache.rocketmq.broker.mqtrace.ConsumeMessageHook;
 import org.apache.rocketmq.broker.mqtrace.SendMessageContext;
+import org.apache.rocketmq.client.impl.MQClientAPIImpl;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
@@ -74,6 +75,9 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         SendMessageContext mqtraceContext;
         switch (request.getCode()) {
             // consumer消费失败的消息发回broker。
+            /**
+             * client端见{@link MQClientAPIImpl#consumerSendMessageBack(java.lang.String, org.apache.rocketmq.common.message.MessageExt, java.lang.String, int, long, int)}
+             */
             case RequestCode.CONSUMER_SEND_MSG_BACK:
                 return this.consumerSendMsgBack(ctx, request);
             default:
@@ -124,6 +128,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         final ConsumerSendMsgBackRequestHeader requestHeader =
             (ConsumerSendMsgBackRequestHeader)request.decodeCommandCustomHeader(ConsumerSendMsgBackRequestHeader.class);
 
+        //钩子函数
         if (this.hasConsumeMessageHook() && !UtilAll.isBlank(requestHeader.getOriginMsgId())) {
 
             ConsumeMessageContext context = new ConsumeMessageContext();
@@ -161,6 +166,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
         //获取某个消费组的重试topic
         String newTopic = MixAll.getRetryTopic(requestHeader.getGroup());
+        //重试队列随机选择一个
         int queueIdInt = Math.abs(this.random.nextInt() % 99999999) % subscriptionGroupConfig.getRetryQueueNums();
 
         int topicSysFlag = 0;
@@ -216,6 +222,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             queueIdInt = Math.abs(this.random.nextInt() % 99999999) % DLQ_NUMS_PER_GROUP;
 
             //死信topic
+            //该主题权限为只写，表示rocketmq不再调度进行消费
             topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic,
                 DLQ_NUMS_PER_GROUP,
                 PermName.PERM_WRITE, 0
@@ -233,6 +240,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             msgExt.setDelayTimeLevel(delayLevel);
         }
 
+        //根据原先消息创建新的消息对象，重试消息拥有自己唯一的消息Id(msgId)并存入commitlog文件，主题是重试主题
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         msgInner.setTopic(newTopic);
         msgInner.setBody(msgExt.getBody());
@@ -251,6 +259,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         String originMsgId = MessageAccessor.getOriginMessageId(msgExt);
         MessageAccessor.setOriginMessageId(msgInner, UtilAll.isBlank(originMsgId) ? msgExt.getMsgId() : originMsgId);
 
+        //存入commitlog
+        //消息重试机制依赖于定时任务实现
         PutMessageResult putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);
         if (putMessageResult != null) {
             switch (putMessageResult.getPutMessageStatus()) {

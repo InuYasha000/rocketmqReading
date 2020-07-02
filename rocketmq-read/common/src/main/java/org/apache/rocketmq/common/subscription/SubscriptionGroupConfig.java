@@ -42,7 +42,7 @@ public class SubscriptionGroupConfig {
      */
     private boolean consumeBroadcastEnable = true;
     /**
-     * 重试队列数量
+     * 重试队列数量,一个broker上一个重试队列
      */
     private int retryQueueNums = 1;
     /**
@@ -58,7 +58,7 @@ public class SubscriptionGroupConfig {
      */
     private long whichBrokerWhenConsumeSlowly = 1;
     /**
-     * 是否通知consumerids变化
+     * 是否通知consumerids变化，消费发生变化时是否立即进行消息队列负载均衡
      */
     private boolean notifyConsumerIdsChangedEnable = true;
 

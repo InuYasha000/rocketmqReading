@@ -122,7 +122,7 @@ public class MixAll {
     public static final List<String> LOCAL_INET_ADDRESS = getLocalInetAddress();
     public static final String LOCALHOST = localhost();
     public static final String DEFAULT_CHARSET = "UTF-8";
-    public static final long MASTER_ID = 0L;
+    public static final long MASTER_ID = 0L;//master/slave标识,0-->slave,1-->master
     public static final long CURRENT_JVM_PID = getPID();
     /**
      * 重试的topic的前缀

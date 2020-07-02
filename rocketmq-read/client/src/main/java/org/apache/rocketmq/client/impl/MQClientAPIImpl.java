@@ -1308,6 +1308,9 @@ public class MQClientAPIImpl {
         requestHeader.setMaxReconsumeTimes(maxConsumeRetryTimes);
 
         String acturallyAddr = getActurallyBrokerAddr(addr);
+        /**
+         * broker见{@link org.apache.rocketmq.broker.processor.SendMessageProcessor#processRequest(io.netty.channel.ChannelHandlerContext, org.apache.rocketmq.remoting.protocol.RemotingCommand)}
+         */
         RemotingCommand response = this.remotingClient.invokeSync(MixAll.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), acturallyAddr),
             request, timeoutMillis);
         assert response != null;

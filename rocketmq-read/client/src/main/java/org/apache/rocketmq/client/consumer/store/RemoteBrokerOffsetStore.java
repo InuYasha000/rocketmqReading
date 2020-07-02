@@ -39,6 +39,7 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 /**
  * Remote storage implementation
  * 远程Broker 来存储队列的OffsetStore
+ * 集群模式消息进度储存文件存放在Broker
  * @author ;
  */
 public class RemoteBrokerOffsetStore implements OffsetStore {
@@ -78,12 +79,18 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         }
     }
 
+    /**
+     * 消息消费进度的读取
+     * @param mq 队列
+     * @param type 读取偏移量类型
+     * @return
+     */
     @Override
     public long readOffset(final MessageQueue mq, final ReadOffsetType type) {
         if (mq != null) {
             switch (type) {
                 case MEMORY_FIRST_THEN_STORE:
-                case READ_FROM_MEMORY: {
+                case READ_FROM_MEMORY: {//内存
                     AtomicLong offset = this.offsetTable.get(mq);
                     if (offset != null) {
                         return offset.get();
@@ -91,7 +98,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
                         return -1;
                     }
                 }
-                case READ_FROM_STORE: {
+                case READ_FROM_STORE: {//磁盘
                     try {
                         long brokerOffset = this.fetchConsumeOffsetFromBroker(mq);
                         AtomicLong offset = new AtomicLong(brokerOffset);

@@ -28,6 +28,32 @@ import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
  * @author ;
  */
 public class OffsetSerializeWrapper extends RemotingSerializable {
+    /**
+     * {
+     *     "offsetTable":{
+     *         {
+     *             "brokerName":"broker-a",
+     *             "queueId":3,
+     *             "topic":"TopicTest"
+     *         }:2,
+     *         {
+     *             "brokerName":"broker-a",
+     *             "queueId":2,
+     *             "topic":"TopicTest"
+     *         }:1,
+     *         {
+     *             "brokerName":"broker-a",
+     *             "queueId":1,
+     *             "topic":"TopicTest"
+     *         }:2,
+     *         {
+     *             "brokerName":"broker-a",
+     *             "queueId":0,
+     *             "topic":"TopicTest"
+     *         }:1
+     *     }
+     * }
+     */
     private ConcurrentMap<MessageQueue, AtomicLong> offsetTable = new ConcurrentHashMap<MessageQueue, AtomicLong>();
 
     public ConcurrentMap<MessageQueue, AtomicLong> getOffsetTable() {

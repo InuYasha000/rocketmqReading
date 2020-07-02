@@ -38,6 +38,7 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 /**
  * Local storage implementation
  * 本地文件偏移量存储
+ * 广播模式消息消费进度储存在消费本地
  * @author ;
  */
 public class LocalFileOffsetStore implements OffsetStore {
@@ -56,11 +57,12 @@ public class LocalFileOffsetStore implements OffsetStore {
      */
     private final String groupName;
     /**
-     * 存储路径
+     * 消息进度储存文件
+     * LOCAL_OFFSET_STORE_DIR/.rocketmq_offsets/{mQClientFactory.getClientId()}/groupName/offset.json
      */
     private final String storePath;
     /**
-     * 偏移量
+     * 消息消费进度
      */
     private ConcurrentMap<MessageQueue, AtomicLong> offsetTable = new ConcurrentHashMap<MessageQueue, AtomicLong>();
 
@@ -230,7 +232,7 @@ public class LocalFileOffsetStore implements OffsetStore {
     }
 
     /**
-     * 如果没有，去找 .bak文件
+     * 如果没有，去找 {@link storePath}+".bak"文件
      * @return ;
      * @throws MQClientException ;
      */
