@@ -30,7 +30,7 @@ public class FindBrokerResult {
      */
     private final boolean slave;
     /**
-     * brokerVersion
+     * brokerVersion，其实就是mq的version
      */
     private final int brokerVersion;
 

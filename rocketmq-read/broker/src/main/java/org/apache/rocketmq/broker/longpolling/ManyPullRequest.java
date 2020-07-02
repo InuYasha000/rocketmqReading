@@ -34,7 +34,8 @@ public class ManyPullRequest {
     }
 
     /**
-     * 获取list
+     * 使用remove方法移除掉集合中的对象，而非要修改集合中的对象的时候，使用clone
+     * 浅复制
      * @return ;
      */
     public synchronized List<PullRequest> cloneListAndClear() {

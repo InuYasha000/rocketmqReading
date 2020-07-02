@@ -22,6 +22,7 @@ import org.apache.rocketmq.common.MixAll;
 /**
  * 存储每个消费者Consumer的订阅信息。
  * @author ;
+ * 见{@link org.apache.rocketmq.broker.subscription.SubscriptionGroupManager#subscriptionGroupTable}
  */
 public class SubscriptionGroupConfig {
     /**

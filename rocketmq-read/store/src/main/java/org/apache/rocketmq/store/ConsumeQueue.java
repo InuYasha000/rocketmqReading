@@ -472,7 +472,7 @@ public class ConsumeQueue {
     }
 
     /**
-     * 获取队列最小的offset
+     * 获取队列最小的offset(第几个条目)
      * @return ;
      */
     public long getMinOffsetInQueue() {
@@ -694,6 +694,10 @@ public class ConsumeQueue {
         return this.getMaxOffsetInQueue() - this.getMinOffsetInQueue();
     }
 
+    /**
+     * 消费队列中最大的条目
+     * @return
+     */
     public long getMaxOffsetInQueue() {
         return this.mappedFileQueue.getMaxOffset() / CQ_STORE_UNIT_SIZE;
     }

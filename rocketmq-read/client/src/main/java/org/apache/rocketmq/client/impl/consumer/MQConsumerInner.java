@@ -27,6 +27,7 @@ import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 /**
  * Consumer inner interface
  * mqConsumerInner接口
+ * 消费接口
  */
 public interface MQConsumerInner {
     /**

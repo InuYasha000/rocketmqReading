@@ -34,6 +34,7 @@ import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
 /**
  * 消费组的信息
+ * 见{@link ConsumerManager#consumerTable}
  * @author ;
  */
 public class ConsumerGroupInfo {

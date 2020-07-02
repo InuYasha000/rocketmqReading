@@ -193,6 +193,7 @@ public class BrokerConfig {
     private boolean longPollingEnable = true;
     /**
      * 如果是短轮询，服务器挂起时间
+     * 如果{@link BrokerConfig#longPollingEnable}为false时，服务器挂起时间取这个
      */
     private long shortPollingTimeMills = 1000;
     /**

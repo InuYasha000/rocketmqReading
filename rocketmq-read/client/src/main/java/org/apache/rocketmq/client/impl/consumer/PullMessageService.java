@@ -28,7 +28,9 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 
 /**
- * 拉取消息的线程
+ * 拉取消息的线程,只为push模式服务
+ * push:消息到达消息服务器后推送给消息消费者
+ * pull:消费端主要拉取消息
  * @author ;
  */
 public class PullMessageService extends ServiceThread {

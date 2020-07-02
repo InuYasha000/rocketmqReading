@@ -20,6 +20,7 @@ import org.apache.rocketmq.common.constant.PermName;
 
 /**
  * Topic相关的配置
+ * 见{@link org.apache.rocketmq.broker.topic.TopicConfigManager#topicConfigTable}
  * @author ;
  */
 public class TopicConfig {

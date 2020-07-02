@@ -123,7 +123,7 @@ public class BrokerController {
      */
     private final ConsumerManager consumerManager;
     /**
-     *
+     * 类过滤模式下的consumer管理器，见{@link ConsumerFilterManager}
      */
     private final ConsumerFilterManager consumerFilterManager;
     /**
@@ -203,7 +203,7 @@ public class BrokerController {
      */
     private final List<ConsumeMessageHook> consumeMessageHookList = new ArrayList<>();
     /**
-     * 消息存储抽象接口，暂时不看
+     * 消息存储抽象接口
      */
     private MessageStore messageStore;
     /**

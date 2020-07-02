@@ -72,7 +72,9 @@ public class FilterAPI {
                     if (tag.length() > 0) {
                         String trimString = tag.trim();
                         if (trimString.length() > 0) {
+                            //tag
                             subscriptionData.getTagsSet().add(trimString);
+                            //hashcode
                             subscriptionData.getCodeSet().add(trimString.hashCode());
                         }
                     }
@@ -85,6 +87,14 @@ public class FilterAPI {
         return subscriptionData;
     }
 
+    /**
+     *
+     * @param topic 消息topic
+     * @param subString 表达式
+     * @param type 表达式类型
+     * @return
+     * @throws Exception
+     */
     public static SubscriptionData build(final String topic, final String subString,
         final String type) throws Exception {
         if (ExpressionType.TAG.equals(type) || type == null) {

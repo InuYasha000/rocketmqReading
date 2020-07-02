@@ -22,6 +22,7 @@ package org.apache.rocketmq.common.protocol.heartbeat;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.filter.FilterAPI;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -49,12 +50,13 @@ public class SubscriptionData implements Comparable<SubscriptionData> {
     private String subString;
     /**
      * tag的set集合和对应的hashcode集合
+     * 见{@link FilterAPI#buildSubscriptionData(java.lang.String, java.lang.String, java.lang.String)}
      */
     private Set<String> tagsSet = new HashSet<String>();
     private Set<Integer> codeSet = new HashSet<Integer>();
     private long subVersion = System.currentTimeMillis();
     /**
-     * 表达式类型或者sql92
+     * 表达式(tag)类型或者sql92
      */
     private String expressionType = ExpressionType.TAG;
 

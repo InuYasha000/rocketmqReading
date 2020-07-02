@@ -591,7 +591,7 @@ public class DefaultMessageStore implements MessageStore {
      * @param group Consumer group that launches this query.
      * @param topic Topic to query.
      * @param queueId Queue ID to query.
-     * @param offset Logical offset to start from.
+     * @param offset Logical offset to start from.这里理解成要拉取的偏移量
      * @param maxMsgNums Maximum count of messages to query.
      * @param messageFilter Message filter used to screen desired messages.
      * @return ;
@@ -616,9 +616,9 @@ public class DefaultMessageStore implements MessageStore {
         long beginTime = this.getSystemClock().now();
 
         GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
-        long nextBeginOffset = offset;
-        long minOffset = 0;
-        long maxOffset = 0;
+        long nextBeginOffset = offset;//下一次拉取的队列偏移量
+        long minOffset = 0;//当前队列最小偏移量
+        long maxOffset = 0;//当前队列最大偏移量
 
         GetMessageResult getResult = new GetMessageResult();
         //获取commitlog中的最大偏移量
@@ -1366,7 +1366,7 @@ public class DefaultMessageStore implements MessageStore {
     public ConsumeQueue findConsumeQueue(String topic, int queueId) {
         // 获取 topic 对应的 所有消费队列
         ConcurrentMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
-        if (null == map) {
+        if (null == map) {//不太明白这一步，就算是防止在读出来的时候有插入了的情况，首先并不能防止这种情况，其次newMap是一个空值
             ConcurrentMap<Integer, ConsumeQueue> newMap = new ConcurrentHashMap<Integer, ConsumeQueue>(128);
             ConcurrentMap<Integer, ConsumeQueue> oldMap = consumeQueueTable.putIfAbsent(topic, newMap);
             if (oldMap != null) {
@@ -1399,7 +1399,7 @@ public class DefaultMessageStore implements MessageStore {
 
     /**
      * 下一个获取队列offset修正
-     * 修正条件：主节点 或者 从节点开启校验offset开关
+     * 修正条件：是主节点 或者 从节点开启校验offset开关
      * 获取下一个偏移量
      */
     private long nextOffsetCorrection(long oldOffset, long newOffset) {

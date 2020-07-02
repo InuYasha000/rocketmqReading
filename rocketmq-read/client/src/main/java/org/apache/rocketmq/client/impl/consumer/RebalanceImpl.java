@@ -57,6 +57,7 @@ public abstract class RebalanceImpl {
     protected final ConcurrentMap<String, Set<MessageQueue>> topicSubscribeInfoTable = new ConcurrentHashMap<String, Set<MessageQueue>>();
     /**
      * topic对应的SubscriptionData
+     * key:topic
      */
     protected final ConcurrentMap<String, SubscriptionData> subscriptionInner = new ConcurrentHashMap<String, SubscriptionData>();
     /**

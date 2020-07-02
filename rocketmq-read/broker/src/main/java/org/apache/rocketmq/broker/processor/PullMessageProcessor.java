@@ -59,10 +59,7 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.netty.RequestTask;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
-import org.apache.rocketmq.store.GetMessageResult;
-import org.apache.rocketmq.store.MessageExtBrokerInner;
-import org.apache.rocketmq.store.MessageFilter;
-import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.*;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
@@ -144,11 +141,11 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             response.setRemark("subscription group no permission, " + requestHeader.getConsumerGroup());
             return response;
         }
-        // 是否挂起请求，当没有消息时  是否允许长轮询
+        // 当没有消息时是否支持挂起请求， 是否允许长轮询
         final boolean hasSuspendFlag = PullSysFlag.hasSuspendFlag(requestHeader.getSysFlag());
         // 是否提交消费进度
         final boolean hasCommitOffsetFlag = PullSysFlag.hasCommitOffsetFlag(requestHeader.getSysFlag());
-        // 是否过滤订阅表达式(subscription)
+        // 是否过滤订阅表达式(subscription)，消息过滤机制为表达式
         final boolean hasSubscriptionFlag = PullSysFlag.hasSubscriptionFlag(requestHeader.getSysFlag());
         //挂起请求超时时常
         final long suspendTimeoutMillisLong = hasSuspendFlag ? requestHeader.getSuspendTimeoutMillis() : 0;
@@ -244,7 +241,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 response.setRemark("the consumer's subscription not latest");
                 return response;
             }
-            //表达式如果不是tag
+            //表达式如果不是tag,也就是类过滤
             if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
                 consumerFilterData = this.brokerController.getConsumerFilterManager().get(requestHeader.getTopic(),
                     requestHeader.getConsumerGroup());
@@ -299,6 +296,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             if (getMessageResult.isSuggestPullingFromSlave()) {
                 responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getWhichBrokerWhenConsumeSlowly());
             } else {
+                //还是选择从master_id
                 responseHeader.setSuggestWhichBrokerId(MixAll.MASTER_ID);
             }
 
@@ -331,14 +329,17 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 responseHeader.setSuggestWhichBrokerId(MixAll.MASTER_ID);
             }
 
+            /**
+             * 消息状态查看{@link DefaultMessageStore#getMessage(java.lang.String, java.lang.String, int, long, int, org.apache.rocketmq.store.MessageFilter)}
+             */
             switch (getMessageResult.getStatus()) {
                 //消息找到了
                 case FOUND:
-                    response.setCode(ResponseCode.SUCCESS);
+                    response.setCode(ResponseCode.SUCCESS);//FOUND
                     break;
                     //消息被移除
                 case MESSAGE_WAS_REMOVING:
-                    response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
+                    response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);//消息放在下一个commitlog文件
                     break;
                 //没有匹配的逻辑队列
                 case NO_MATCHED_LOGIC_QUEUE:
@@ -550,10 +551,12 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             response.setRemark("store getMessage return null");
         }
 
+        //更新消息消费进度标识
         boolean storeOffsetEnable = brokerAllowSuspend;
         storeOffsetEnable = storeOffsetEnable && hasCommitOffsetFlag;
         storeOffsetEnable = storeOffsetEnable && this.brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE;
         if (storeOffsetEnable) {
+            //更新消息消费进度
             this.brokerController.getConsumerOffsetManager().commitOffset(RemotingHelper.parseChannelRemoteAddr(channel),
                 requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getCommitOffset());
         }

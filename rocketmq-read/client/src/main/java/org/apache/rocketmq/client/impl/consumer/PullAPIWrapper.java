@@ -187,18 +187,18 @@ public class PullAPIWrapper {
 
     /**
      * 拉取消息
-     * @param mq ;
-     * @param subExpression ;
-     * @param expressionType ;
+     * @param mq 从哪个消息消费队列拉取消息;
+     * @param subExpression 消息过滤表达式;
+     * @param expressionType 消息表达式类型，TAG和SQL92;
      * @param subVersion ;
-     * @param offset 偏移量
-     * @param maxNums ;
-     * @param sysFlag ;
-     * @param commitOffset ;
-     * @param brokerSuspendMaxTimeMillis ;
-     * @param timeoutMillis ;
-     * @param communicationMode ;
-     * @param pullCallback ;
+     * @param offset 消息拉取偏移量
+     * @param maxNums 本次拉取最大条数，默认32条;
+     * @param sysFlag 拉取系统标识;
+     * @param commitOffset 当前MessageQueue的消费进度(内存中);
+     * @param brokerSuspendMaxTimeMillis 消息拉取过程中允许Broker挂起时间，默认15秒;
+     * @param timeoutMillis 消息拉取超时时间;
+     * @param communicationMode 消息拉取模式，默认为异步;
+     * @param pullCallback 从Broker拉取到消息后的回调;
      * @return ;
      * @throws MQClientException ;
      * @throws RemotingException ;
@@ -260,7 +260,7 @@ public class PullAPIWrapper {
             requestHeader.setExpressionType(expressionType);
 
             String brokerAddr = findBrokerResult.getBrokerAddr();
-            if (PullSysFlag.hasClassFilterFlag(sysFlagInner)) {
+            if (PullSysFlag.hasClassFilterFlag(sysFlagInner)) {//类过滤模式
                 brokerAddr = computPullFromWhichFilterServer(mq.getTopic(), brokerAddr);
             }
 

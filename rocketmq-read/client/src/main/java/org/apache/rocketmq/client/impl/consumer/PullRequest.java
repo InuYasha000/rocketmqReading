@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.client.impl.consumer;
 
+import org.apache.rocketmq.client.consumer.PullCallback;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 /**
@@ -28,15 +29,16 @@ public class PullRequest {
      */
     private String consumerGroup;
     /**
-     * 队列
+     * 待拉取消费队列
      */
     private MessageQueue messageQueue;
     /**
-     * 处理队列
+     * 消息处理队列，从Broker拉取到的消息先存入processQueue,然后再提交到消费者线程池消费
+     * 在{@link PullCallback#onSuccess(org.apache.rocketmq.client.consumer.PullResult)}
      */
     private ProcessQueue processQueue;
     /**
-     * 下一个偏移量
+     * 待拉取的messageQueue的偏移量
      */
     private long nextOffset;
     /**

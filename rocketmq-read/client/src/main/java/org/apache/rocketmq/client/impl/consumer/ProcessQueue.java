@@ -41,7 +41,7 @@ import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
  */
 public class ProcessQueue {
     /**
-     * rebalanceLock最大的存活时间
+     * rebalanceLock最大的存活时间,用来判断锁是否超时，默认30秒锁就算超时
      */
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockMaxLiveTime", "30000"));
     /**
@@ -49,7 +49,7 @@ public class ProcessQueue {
      */
     public final static long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
     /**
-     * 拉取的最大的空闲时间
+     * 拉取的最大的空闲时间，判断是否pullMessageService是否空闲
      */
     private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
 
@@ -69,7 +69,7 @@ public class ProcessQueue {
      */
     private final AtomicLong msgCount = new AtomicLong();
     /**
-     * 消息大小
+     * 消息大小，是msg.getBody().length的总和
      */
     private final AtomicLong msgSize = new AtomicLong();
     /**
@@ -86,11 +86,11 @@ public class ProcessQueue {
      */
     private final AtomicLong tryUnlockTimes = new AtomicLong(0);
     /**
-     * 队列的最大的偏移量
+     * 队列的最大的偏移量,最大偏移量其实就是最新加入的msg的偏移量
      */
     private volatile long queueOffsetMax = 0L;
     /**
-     * 是否已销毁
+     * 是否已销毁，表示这个processQueue被丢弃
      */
     private volatile boolean dropped = false;
     /**
@@ -150,6 +150,7 @@ public class ProcessQueue {
             try {
                 this.lockTreeMap.readLock().lockInterruptibly();
                 try {
+                    //超过15分钟未消费的消息
                     if (!msgTreeMap.isEmpty() && System.currentTimeMillis() - Long.parseLong(MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue())) > pushConsumer.getConsumeTimeout() * 60 * 1000) {
                         msg = msgTreeMap.firstEntry().getValue();
                     } else {
@@ -173,6 +174,7 @@ public class ProcessQueue {
                         if (!msgTreeMap.isEmpty() && msg.getQueueOffset() == msgTreeMap.firstKey()) {
                             try {
                                 //移除此消息
+                                //Collections.singletonList用于只有一个参数返回list(一个元素的优化,减少内存分配,无需分配额外的内存)
                                 removeMessage(Collections.singletonList(msg));
                             } catch (Exception e) {
                                 log.error("send expired msg exception", e);
@@ -203,7 +205,7 @@ public class ProcessQueue {
                 int validMsgCnt = 0;
                 for (MessageExt msg : msgs) {
                     MessageExt old = msgTreeMap.put(msg.getQueueOffset(), msg);
-                    if (null == old) {
+                    if (null == old) {//新增不是覆盖
                         validMsgCnt++;
                         this.queueOffsetMax = msg.getQueueOffset();
                         msgSize.addAndGet(msg.getBody().length);
@@ -220,6 +222,7 @@ public class ProcessQueue {
                     MessageExt messageExt = msgs.get(msgs.size() - 1);
                     String property = messageExt.getProperty(MessageConst.PROPERTY_MAX_OFFSET);
                     if (property != null) {
+                        //队列的最大偏移量减去当前拉取到的数据的偏移量
                         long accTotal = Long.parseLong(property) - messageExt.getQueueOffset();
                         if (accTotal > 0) {
                             this.msgAccCnt = accTotal;
@@ -238,6 +241,7 @@ public class ProcessQueue {
 
     /**
      * 获取已经消费的，和堆积的消息，最大偏移量差值
+     * 就是{@link msgTreeMap}的最后一个key(offset)减去第一个key(offset),因为msgTreeMap是有序的
      * @return ;
      */
     public long getMaxSpan() {
@@ -258,7 +262,7 @@ public class ProcessQueue {
     }
 
     /**
-     * 移除Message
+     * 移除Message，从{@link msgTreeMap}根据偏移量移除消息
      * @param msgs msgs
      * @return ;
      */
@@ -325,6 +329,7 @@ public class ProcessQueue {
 
     /**
      * 顺序消费时的回滚
+     * 把{@link consumingMsgOrderlyTreeMap}全部扔进{@link msgTreeMap}，然后删除
      * 逻辑类似于{@link #makeMessageToCosumeAgain(List)}
      */
     public void rollback() {
@@ -372,8 +377,7 @@ public class ProcessQueue {
     }
 
     /**
-     * 使得消息可以再次消费
-     * 指定消息重新消费
+     * 传入指定的消息重新消费
      * 逻辑类似于{@link #rollback()}
      * @param msgs 消息;
      */
@@ -394,8 +398,8 @@ public class ProcessQueue {
     }
 
     /**
-     * 获取一部分消息
-     * 获得持有消息前N条
+     * 获取batchSize条消息去消费
+     * 注意这个方法是获取n条消息去顺序消费，并不只是单纯获取消息
      * @param batchSize ;
      * @return ;
      */
