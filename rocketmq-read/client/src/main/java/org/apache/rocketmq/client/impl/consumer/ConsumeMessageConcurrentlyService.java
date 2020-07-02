@@ -60,19 +60,19 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
      */
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
     /**
-     * DefaultMQPushConsumer门面
+     * DefaultMQPushConsumer门面，消费者对象
      */
     private final DefaultMQPushConsumer defaultMQPushConsumer;
     /**
-     * messageListenerConcurrently
+     * messageListenerConcurrently，并发消息业务事件类
      */
     private final MessageListenerConcurrently messageListener;
     /**
-     * 消费任务队列
+     * 消息消费任务队列
      */
     private final BlockingQueue<Runnable> consumeRequestQueue;
     /**
-     * 消费线程池
+     * 消息消费线程池
      */
     private final ThreadPoolExecutor consumeExecutor;
     /**
@@ -80,9 +80,12 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
      */
     private final String consumerGroup;
 
+    /**
+     * 添加消费任务到{@link consumeExecutor}延迟调度器，单线程池
+     */
     private final ScheduledExecutorService scheduledExecutorService;
     /**
-     * 清除超时的消息的线程池
+     * 清除超时的消息的线程池，单线程池
      */
     private final ScheduledExecutorService cleanExpireMsgExecutors;
 
@@ -103,7 +106,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             this.defaultMQPushConsumer.getConsumeThreadMax(),
             1000 * 60,
             TimeUnit.MILLISECONDS,
-            this.consumeRequestQueue,
+            this.consumeRequestQueue,//无界队列，不会出现拒绝提交异常
             new ThreadFactoryImpl("ConsumeMessageThread_"));
 
         //两个单线程线程池
@@ -286,6 +289,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 try {
                     this.consumeExecutor.submit(consumeRequest);
                 } catch (RejectedExecutionException e) {
+                    //要是从total开始还是大了？
                     for (; total < msgs.size(); total++) {
                         msgThis.add(msgs.get(total));
                     }
@@ -301,6 +305,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
      * @param msgs msgs;
      */
     public void resetRetryTopic(final List<MessageExt> msgs) {
+        //获取重试队列的队列名称
         final String groupTopic = MixAll.getRetryTopic(consumerGroup);
         for (MessageExt msg : msgs) {
             String retryTopic = msg.getProperty(MessageConst.PROPERTY_RETRY_TOPIC);

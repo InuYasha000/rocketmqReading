@@ -67,10 +67,10 @@ public interface ConsumeMessageService {
 
     /**
      * 提交消费请求结果
-     * @param msgs 消息
-     * @param processQueue 处理队列
-     * @param messageQueue 消息队列
-     * @param dispathToConsume 是否分发消费
+     * @param msgs 消息列表，一次从服务器最多拉取32条
+     * @param processQueue 消息处理队列
+     * @param messageQueue 消息所属消费队列
+     * @param dispathToConsume 是否转发到线程池消费，并发消费时忽略此参数
      */
     void submitConsumeRequest(
         final List<MessageExt> msgs,

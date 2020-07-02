@@ -27,6 +27,7 @@ public class MessageConst {
     public static final String PROPERTY_TAGS = "TAGS";
     public static final String PROPERTY_WAIT_STORE_MSG_OK = "WAIT";
     public static final String PROPERTY_DELAY_TIME_LEVEL = "DELAY";
+    //重试主题，这个主题加入到了消息属性，然后设置主题为SCHEDULE_TOPIC，以便到时间后重新参与消费
     public static final String PROPERTY_RETRY_TOPIC = "RETRY_TOPIC";
     /**
      * 消息真实的topic

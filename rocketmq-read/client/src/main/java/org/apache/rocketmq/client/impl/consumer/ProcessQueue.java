@@ -90,7 +90,7 @@ public class ProcessQueue {
      */
     private volatile long queueOffsetMax = 0L;
     /**
-     * 是否已销毁，表示这个processQueue被丢弃
+     * 是否已销毁，表示这个processQueue被丢弃,消息负载均衡时如果该消息队列被分配给消费组内其他消费者时为true，防止消费者消费不属于自己的消息队列
      */
     private volatile boolean dropped = false;
     /**
