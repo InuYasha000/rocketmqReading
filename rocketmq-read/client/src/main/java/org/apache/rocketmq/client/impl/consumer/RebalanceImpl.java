@@ -337,7 +337,9 @@ public abstract class RebalanceImpl {
             }
             //集群消费
             case CLUSTERING: {
+                //消费队列
                 Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
+                //消费者
                 List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup);
                 if (null == mqSet) {
                     if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
