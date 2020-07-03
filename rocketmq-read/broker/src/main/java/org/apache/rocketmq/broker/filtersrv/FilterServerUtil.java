@@ -25,6 +25,11 @@ import org.apache.rocketmq.logging.InternalLogger;
  * @author ;
  */
 public class FilterServerUtil {
+    /**
+     * 运行shell脚本
+     * @param shellString
+     * @param log
+     */
     public static void callShell(final String shellString, final InternalLogger log) {
         Process process = null;
         try {

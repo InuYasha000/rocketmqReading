@@ -185,6 +185,7 @@ public class BrokerConfig {
     private int endTransactionPoolQueueCapacity = 100000;
     /**
      * 过滤服务器数量
+     * filterserver不能少于这个数量，不然就新增，见{@link org.apache.rocketmq.broker.filtersrv.FilterServerManager#createFilterServer()}
      */
     private int filterServerNums = 0;
     /**

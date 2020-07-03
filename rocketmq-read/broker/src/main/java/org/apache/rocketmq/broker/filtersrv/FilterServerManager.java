@@ -41,12 +41,14 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
  */
 public class FilterServerManager {
 
+    //broker每隔10秒扫描一次注册表，超过这个时间(也就是30秒)未收到filterserver的注册时间，就关闭broker和filterserver的连接
     public static final long FILTER_SERVER_MAX_IDLE_TIME_MILLS = 30000;
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     /**
      * FilterServer启动时指定了端口号为0，代表的是随机端口号
      * FilterServer和Broker部署在了一起，节省网络带宽
      * FileServer信息
+     * 注册filter就是注册到了这里
      */
     private final ConcurrentMap<Channel, FilterServerInfo> filterServerTable =
         new ConcurrentHashMap<>(16);
@@ -60,7 +62,7 @@ public class FilterServerManager {
     }
 
     /**
-     * 如果需要创建FilterServer,则会创建FilterServer
+     * Broker为了避免Broker端FilterServer的异常退出而越来越少，每30秒检测一下当前存活的FilterServer个数，如果存活个数小于配置个数，则新增
      */
     public void start() {
 
@@ -88,6 +90,10 @@ public class FilterServerManager {
         }
     }
 
+    /**
+     * 构建shell脚本
+     * @return
+     */
     private String buildStartCommand() {
         String config = "";
         if (BrokerStartup.configFile != null) {
@@ -126,6 +132,9 @@ public class FilterServerManager {
         }
     }
 
+    /**
+     * broker每隔10秒扫描一次注册表，超过30秒未收到filterserver的注册时间，就关闭broker和filterserver的连接
+     */
     public void scanNotActiveChannel() {
 
         Iterator<Entry<Channel, FilterServerInfo>> it = this.filterServerTable.entrySet().iterator();
