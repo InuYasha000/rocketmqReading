@@ -26,7 +26,7 @@ import org.apache.rocketmq.remoting.RPCHook;
  */
 public class TransactionMQProducer extends DefaultMQProducer {
     /**
-     * 事务回查listener
+     * 事务回查listener,也是事务监听器
      */
     private TransactionCheckListener transactionCheckListener;
     /**
