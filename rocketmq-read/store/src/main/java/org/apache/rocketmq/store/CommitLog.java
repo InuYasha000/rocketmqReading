@@ -1221,7 +1221,7 @@ public class CommitLog {
         //刷盘点偏移量
         private final long nextOffset;
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
-        //刷盘结果
+        //刷盘结果，这个应该是主从同步标识
         private volatile boolean flushOK = false;
 
         public GroupCommitRequest(long nextOffset) {

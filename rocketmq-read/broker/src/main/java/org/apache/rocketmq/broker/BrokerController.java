@@ -97,6 +97,7 @@ import org.apache.rocketmq.store.MessageArrivingListener;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.ha.HAService;
 import org.apache.rocketmq.store.stats.BrokerStats;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
@@ -618,6 +619,9 @@ public class BrokerController {
                 }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
             }
 
+            /**
+             * Broker角色为SLAVE时读取Broker配置文件中的{@link MessageStoreConfig#haMasterAddress}更新{@link HAService.HAClient#masterAddress }
+             */
             if (BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole()) {
                 if (this.messageStoreConfig.getHaMasterAddress() != null
                         && this.messageStoreConfig.getHaMasterAddress().length() >= 6) {

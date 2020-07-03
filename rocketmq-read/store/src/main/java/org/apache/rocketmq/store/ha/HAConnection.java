@@ -28,16 +28,19 @@ import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingUtil;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 
+/**
+ * 负责M-S同步
+ */
 public class HAConnection {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final HAService haService;
-    private final SocketChannel socketChannel;
-    private final String clientAddr;
-    private WriteSocketService writeSocketService;
-    private ReadSocketService readSocketService;
+    private final SocketChannel socketChannel;//网络socketChannel通道
+    private final String clientAddr;//客户端连接地址
+    private WriteSocketService writeSocketService;//服务端向从服务器写数据服务类
+    private ReadSocketService readSocketService;//服务端向从服务端读数据服务类
 
-    private volatile long slaveRequestOffset = -1;
-    private volatile long slaveAckOffset = -1;
+    private volatile long slaveRequestOffset = -1;//从服务端请求拉取数据的偏移量
+    private volatile long slaveAckOffset = -1;//从服务器反馈的已拉取完成的数据偏移量
 
     public HAConnection(final HAService haService, final SocketChannel socketChannel) throws IOException {
         this.haService = haService;
@@ -81,10 +84,10 @@ public class HAConnection {
     //读来自 Slave节点 的数据
     class ReadSocketService extends ServiceThread {
         private static final int READ_MAX_BUFFER_SIZE = 1024 * 1024;
-        private final Selector selector;
-        private final SocketChannel socketChannel;
-        private final ByteBuffer byteBufferRead = ByteBuffer.allocate(READ_MAX_BUFFER_SIZE);
-        private int processPostion = 0;
+        private final Selector selector;//网络事件选择器
+        private final SocketChannel socketChannel;//网络通道，用于读写的socket通道
+        private final ByteBuffer byteBufferRead = ByteBuffer.allocate(READ_MAX_BUFFER_SIZE);//网络读写缓存区，默认1M
+        private int processPostion = 0;//byteBufferRead当前处理指针
         private volatile long lastReadTimestamp = System.currentTimeMillis();
 
         public ReadSocketService(final SocketChannel socketChannel) throws IOException {
