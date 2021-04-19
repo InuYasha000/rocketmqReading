@@ -1503,6 +1503,7 @@ public class CommitLog {
             }
 
             // Determines whether there is sufficient free space
+            //每个commitLog至少空闲8字节，高4字节储存文件剩余空间，低4字节储存魔数
             if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
                 //重置msgStoreItemMemory的limit（limit=maxBlank，position大于limit也会变成limit，反正position要比limit小）
                 this.resetByteBuffer(this.msgStoreItemMemory, maxBlank);//最多只能写maxBlank长度

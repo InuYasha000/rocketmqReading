@@ -462,7 +462,7 @@ public abstract class NettyRemotingAbstract {
 
         long beginStartTime = System.currentTimeMillis();
         final int opaque = request.getOpaque();
-        //先获取信号量限流
+        //先获取信号量限流,65535，这里就是对异步发送限流
         boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         if (acquired) {
 

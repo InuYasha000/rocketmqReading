@@ -450,14 +450,14 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         //topic的length太长
-        // 消息topic过长,127个字符？？
+        // 消息topic过长,127个字节
         if (msg.getTopic().length() > Byte.MAX_VALUE) {
             log.warn("putMessage message topic length too long " + msg.getTopic().length());
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
 
         //properries太长
-        // 消息附加属性过长，32767个字符？？
+        // 消息附加属性过长，32767个字节
         if (msg.getPropertiesString() != null && msg.getPropertiesString().length() > Short.MAX_VALUE) {
             log.warn("putMessage message properties length too long " + msg.getPropertiesString().length());
             return new PutMessageResult(PutMessageStatus.PROPERTIES_SIZE_EXCEEDED, null);

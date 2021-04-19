@@ -59,8 +59,7 @@ public class MappedFile extends ReferenceResource {
     protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     /**
-     * 总共映射的虚拟内存的大小
-     * 当前JVM实例中MappedFile对象个数
+     * 当前JVM实例中MappedFile虚拟内存
      */
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
     /**
@@ -87,7 +86,7 @@ public class MappedFile extends ReferenceResource {
      */
     private final AtomicInteger flushedPosition = new AtomicInteger(0);
     /**
-     * 文件大小，单个MappedFile大小
+     * 文件大小，单个MappedFile大小，默认1G
      */
     protected int fileSize;
     /**

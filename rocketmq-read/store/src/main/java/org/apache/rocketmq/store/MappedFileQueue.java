@@ -49,7 +49,7 @@ public class MappedFileQueue {
      */
     private final String storePath;
     /**
-     * mappedFile的size大小
+     * mappedFile的size大小，默认1GB
      */
     private final int mappedFileSize;
     /**
