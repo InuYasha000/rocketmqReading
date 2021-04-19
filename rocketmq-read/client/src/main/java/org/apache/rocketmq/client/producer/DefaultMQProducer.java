@@ -132,7 +132,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     /**
      * Indicate whether to retry another broker on sending failure internally.
      * 如果消息发送失败，就重试另外的broker
-     * 消息发送失败，是否不等待失败消息返回旧重试另一个Broker
+     * 消息发送失败，是否不等待失败消息返回旧重试另一个Broker,默认false
      */
     private boolean retryAnotherBrokerWhenNotStoreOK = false;
 

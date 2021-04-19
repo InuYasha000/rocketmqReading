@@ -93,6 +93,7 @@ public class MQFaultStrategy {
         if (this.sendLatencyFaultEnable) {
             try {
 
+                //自增
                 int index = tpInfo.getSendWhichQueue().getAndIncrement();
                 for (int i = 0; i < tpInfo.getMessageQueueList().size(); i++) {
                     int pos = Math.abs(index++) % tpInfo.getMessageQueueList().size();

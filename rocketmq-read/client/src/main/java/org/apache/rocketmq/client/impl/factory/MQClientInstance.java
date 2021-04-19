@@ -108,7 +108,7 @@ public class MQClientInstance {
      */
     private final long bootTimestamp = System.currentTimeMillis();
     /**
-     * key:group mqBroducerInner
+     * key:group mqBroducerInner，生产者组
      */
     private final ConcurrentMap<String, MQProducerInner> producerTable = new ConcurrentHashMap<String, MQProducerInner>();
     /**
@@ -776,7 +776,7 @@ public class MQClientInstance {
                             }
                         }
                     } else {
-                        //获取topicRouteInfo
+                        //从NameServer获取topicRouteInfo
                         //允许topic不存在
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, 1000 * 3);
                     }

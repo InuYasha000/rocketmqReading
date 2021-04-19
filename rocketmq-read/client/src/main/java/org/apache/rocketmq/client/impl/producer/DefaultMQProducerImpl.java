@@ -216,6 +216,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
 
+                //创建客户端实例
                 this.mQClientFactory = MQClientManager.getInstance().getAndCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 
                 //在mQClientFactory中注册producer，其实就是放入MQClientInstance.producerTable
@@ -727,7 +728,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             String[] brokersSent = new String[timesTotal];
             // 循环调用发送消息，直到成功
             for (; times < timesTotal; times++) {
-                //上一个brokerName,一开始为null
+                //上一个brokerName,一开始为null，在这里看的出来mq最开始是null，此时lastBrokerName也应该是null，倘若重试了，此时lastBrokerName就是上次失败的broker
+                //此次发送消息肯定要规避掉
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
                 // 选择消息要发送到的队列，貌似会优先发送上一次的队列
                 MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName);
@@ -749,7 +751,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
 
                         endTimestamp = System.currentTimeMillis();
-                        //更新broker的延迟统计，更新Broker可用性信息，false表示调用Broker没有报错
+                        //更新broker的延迟统计，更新Broker可用性信息，false表示调用Broker没有报错，true使用默认30s时长计算broker规避故障时长
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false);
                         switch (communicationMode) {
                             case ASYNC:
