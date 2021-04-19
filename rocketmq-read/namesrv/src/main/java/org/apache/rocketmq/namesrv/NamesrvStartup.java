@@ -134,6 +134,7 @@ public class NamesrvStartup {
 
         // remember all configs to prevent discard
         //将properties合并到Configuration.allConfigs
+        //读写锁
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
@@ -151,6 +152,7 @@ public class NamesrvStartup {
             System.exit(-3);
         }
 
+        //注册JVM钩子函数，以便JVM关闭时好关闭资源，比如线程池资源
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
             @Override
             public Void call() throws Exception {

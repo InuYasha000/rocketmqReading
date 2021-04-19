@@ -104,7 +104,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             /*
              * 查询brokerTopicConfig
              */
-            case RequestCode.QUERY_DATA_VERSION:
+            case RequestCode.QUERY_DATA_VERSION://查询版本号，其实这个就是心跳，只是还有别的功能，检测版本号是否变化来执行注册
                 return queryBrokerTopicConfig(ctx, request);
             /*
              * 注册Broker

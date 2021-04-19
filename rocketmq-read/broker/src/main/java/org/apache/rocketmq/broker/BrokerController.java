@@ -1085,6 +1085,8 @@ public class BrokerController {
             public void run() {
                 try {
                     //注意这里的是否oneway是false，具体操作请跟进去方法看
+                    //这里这样理解这个30s的定时任务，这可以看成一个定时任务，每隔30s向所有nameServer发送一次心跳，并且返回nameServer版本号是否有变化
+                    //一旦有一个有变化，那么意味着就需要重新注册
                     BrokerController.this.registerBrokerAll(true, false, brokerConfig.isForceRegister());
                 } catch (Throwable e) {
                     log.error("registerBrokerAll Exception", e);
@@ -1158,6 +1160,7 @@ public class BrokerController {
         }
 
         //如果是强制注册，或者需要注册，就执行注册NameServer
+        //注册和心跳功能联合了，30s一次心跳向所有nameServer都发送心跳，检测版本号是否有变化，一旦有一个发生了变化，立马重新注册
         if (forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
             this.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),

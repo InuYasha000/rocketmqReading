@@ -47,11 +47,11 @@ public class NettyServerConfig implements Cloneable {
      */
     private int serverChannelMaxIdleTimeSeconds = 120;
     /**
-     * 发送方sendBufferSize
+     * 发送方sendBufferSize，默认64KB
      */
     private int serverSocketSndBufSize = NettySystemConfig.socketSndbufSize;
     /**
-     * 接收bufferSIze
+     * 接收bufferSIze，默认64KB
      */
     private int serverSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;
     /**
@@ -66,6 +66,7 @@ public class NettyServerConfig implements Cloneable {
      * ../glibc-2.10.1/configure \ --prefix=/usr \ --with-headers=/usr/include \
      * --host=x86_64-linux-gnu \ --build=x86_64-pc-linux-gnu \ --without-gd
      * 是否使用Native的epoll，默认是false
+     * Linux环境建议开启
      */
     private boolean useEpollNativeSelector = false;
 

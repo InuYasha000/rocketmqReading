@@ -39,10 +39,10 @@ public class Message implements Serializable {
     /**
      * 拓展属性
      * 从这个类里面的set方法可以看出来properties的几个属性设置方法分别是
-     * {@link Message#setTags}-->{@link MessageConst#PROPERTY_TAGS}
-     * {@link Message#setKeys}-->{@link MessageConst#PROPERTY_KEYS}
-     * {@link Message#setDelayTimeLevel}-->{@link org.apache.rocketmq.common.message.MessageConst#PROPERTY_DELAY_TIME_LEVEL}
-     * {@link Message#setWaitStoreMsgOK}-->{@link MessageConst#PROPERTY_WAIT_STORE_MSG_OK}
+     * {@link Message#setTags}-->{@link MessageConst#PROPERTY_TAGS} 消息过滤
+     * {@link Message#setKeys}-->{@link MessageConst#PROPERTY_KEYS} Message索引
+     * {@link Message#setDelayTimeLevel}-->{@link org.apache.rocketmq.common.message.MessageConst#PROPERTY_DELAY_TIME_LEVEL} 消息延迟级别，用于定时任务或消息重试
+     * {@link Message#setWaitStoreMsgOK}-->{@link MessageConst#PROPERTY_WAIT_STORE_MSG_OK} 消息发送时是否等消息储存完成后再返回
      */
     private Map<String, String> properties;
     /**

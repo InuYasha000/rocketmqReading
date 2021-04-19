@@ -69,10 +69,10 @@ public class RouteInfoManager {
      *                 "topicSynFlag":0
      *             },{
      *                 "brokerName":"broker-b",
-     *                         "readQueueNums":4,
-     *                         "writeQueueNums":4,
-     *                         "perm":6,
-     *                         "topicSynFlag":0
+     *                 "readQueueNums":4,
+     *                 "writeQueueNums":4,
+     *                 "perm":6,
+     *                 "topicSynFlag":0
      *             }],
      *             "topic other":[]
      *         }
@@ -233,6 +233,7 @@ public class RouteInfoManager {
             try {
                 this.lock.writeLock().lockInterruptibly();
 
+                //判断所属集群是否存在，不存在就新建
                 Set<String> brokerNames = this.clusterAddrTable.get(clusterName);
                 if (null == brokerNames) {
                     brokerNames = new HashSet<>();
@@ -254,7 +255,7 @@ public class RouteInfoManager {
                 String oldAddr = brokerData.getBrokerAddrs().put(brokerId, brokerAddr);
                 brokerData.getBackUpBrokerAddrs().put(brokerId, backUpBrokerAddr);
 
-                //如果oldAddr是null，也说明是第一次注册
+                //如果oldAddr是null，也说明是第一次注册，并且是Master节点，此时需要更新Topic路由元数据
                 registerFirst = registerFirst || (null == oldAddr);
                 //如果是Master节点
                 if (null != topicConfigWrapper && MixAll.MASTER_ID == brokerId) {
@@ -385,7 +386,7 @@ public class RouteInfoManager {
                     } else {
                         log.info("topic changed, {} OLD: {} NEW: {}", topicConfig.getTopicName(), qd,
                             queueData);
-                        //addNewOnetrue，后面会加，这里就移除
+                        //addNewOne true，后面会加，这里就移除
                         it.remove();
                     }
                 }
