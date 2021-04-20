@@ -330,7 +330,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             }
             //顺序消费
         } else {
-            //是否是第一次锁定
+            //是否被锁定
             if (processQueue.isLocked()) {
                 //不是第一此锁定
                 if (!pullRequest.isLockedFirst()) {

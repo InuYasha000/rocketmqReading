@@ -289,7 +289,6 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 try {
                     this.consumeExecutor.submit(consumeRequest);
                 } catch (RejectedExecutionException e) {
-                    //要是从total开始还是大了？
                     for (; total < msgs.size(); total++) {
                         msgThis.add(msgs.get(total));
                     }
