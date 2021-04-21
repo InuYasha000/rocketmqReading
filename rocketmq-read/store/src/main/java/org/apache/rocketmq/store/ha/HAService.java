@@ -55,6 +55,7 @@ public class HAService {
     private final DefaultMessageStore defaultMessageStore;
 
     private final WaitNotifyObject waitNotifyObject = new WaitNotifyObject();
+    //从服务器的拉取偏移量
     private final AtomicLong push2SlaveMaxOffset = new AtomicLong(0);
 
     private final GroupTransferService groupTransferService;

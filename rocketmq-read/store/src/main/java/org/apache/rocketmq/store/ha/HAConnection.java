@@ -88,6 +88,7 @@ public class HAConnection {
         private final SocketChannel socketChannel;//网络通道，用于读写的socket通道
         private final ByteBuffer byteBufferRead = ByteBuffer.allocate(READ_MAX_BUFFER_SIZE);//网络读写缓存区，默认1M
         private int processPostion = 0;//byteBufferRead当前处理指针
+        //slave发送偏移量过来就更新这个时间，用来判断主从之间是否超时
         private volatile long lastReadTimestamp = System.currentTimeMillis();
 
         public ReadSocketService(final SocketChannel socketChannel) throws IOException {
@@ -165,7 +166,7 @@ public class HAConnection {
                         readSizeZeroTimes = 0;
                         // 设置最后读取时间
                         this.lastReadTimestamp = HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now();
-                        if ((this.byteBufferRead.position() - this.processPostion) >= 8) {
+                        if ((this.byteBufferRead.position() - this.processPostion) >= 8) {//在HAClient里面发过来的是8字节的数字，因此这里读到内容大于等于8
                             // 读取Slave 请求来的CommitLog的最大位置
                             int pos = this.byteBufferRead.position() - (this.byteBufferRead.position() % 8);
                             long readOffset = this.byteBufferRead.getLong(pos - 8);
@@ -180,9 +181,11 @@ public class HAConnection {
                             }
 
                             // 通知目前Slave进度。主要用于Master节点为同步类型的。
+                            // 因为同步等待HA复制结果的消息发送线程在这里是阻塞的，因此这里会通知一下，表示SLAVE返回进度了，你们可能不用阻塞了
                             HAConnection.this.haService.notifyTransferSome(HAConnection.this.slaveAckOffset);
                         }
                     } else if (readSize == 0) {
+                        //连续三次读到空，表示读完了
                         if (++readSizeZeroTimes >= 3) {
                             break;
                         }
@@ -233,7 +236,9 @@ public class HAConnection {
                         continue;
                     }
 
+                    //初次数据传输
                     if (-1 == this.nextTransferFromWhere) {
+                        //从当前commitLog最大牌偏移量拉取
                         if (0 == HAConnection.this.slaveRequestOffset) {
                             long masterOffset = HAConnection.this.haService.getDefaultMessageStore().getCommitLog().getMaxOffset();
                             masterOffset =

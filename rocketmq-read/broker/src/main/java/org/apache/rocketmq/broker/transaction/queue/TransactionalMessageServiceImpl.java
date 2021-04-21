@@ -222,10 +222,11 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                         log.info("Queue={} process time reach max={}", messageQueue, MAX_PROCESS_TIME_LIMIT);
                         break;
                     }
-                    if (removeMap.containsKey(i)) {
+                    if (removeMap.containsKey(i)) {//消息已被处理
                         log.info("Half offset {} has been committed/rolled back", i);
                         removeMap.remove(i);
                     } else {
+                        //从RMQ_SYS_TRANS_HALF_TOPIC获取消息
                         GetResult getResult = getHalfMsg(messageQueue, i);
                         MessageExt msgExt = getResult.getMsg();
                         if (msgExt == null) {

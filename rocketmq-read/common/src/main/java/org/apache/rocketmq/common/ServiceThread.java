@@ -123,6 +123,7 @@ public abstract class ServiceThread implements Runnable {
     }
 
     protected void waitForRunning(long interval) {
+        //前面有人提醒过了要醒过来，这里就不等待了
         if (hasNotified.compareAndSet(true, false)) {
             this.onWaitEnd();
             return;

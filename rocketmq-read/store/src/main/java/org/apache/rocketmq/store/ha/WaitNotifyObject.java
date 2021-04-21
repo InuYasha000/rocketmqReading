@@ -32,6 +32,7 @@ public class WaitNotifyObject {
 
     public void wakeup() {
         synchronized (this) {
+            //是否已经有人通知过了，这里就是避免重复通知
             if (!this.hasNotified) {
                 this.hasNotified = true;
                 this.notify();

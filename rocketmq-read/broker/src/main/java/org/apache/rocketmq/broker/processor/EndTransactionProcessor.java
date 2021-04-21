@@ -139,14 +139,17 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                 RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
                 if (res.getCode() == ResponseCode.SUCCESS) {
 
+                    //恢复消息原来的主题
                     MessageExtBrokerInner msgInner = endMessageTransaction(result.getPrepareMessage());
                     msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), requestHeader.getCommitOrRollback()));
                     msgInner.setQueueOffset(requestHeader.getTranStateTableOffset());
                     msgInner.setPreparedTransactionOffset(requestHeader.getCommitLogOffset());
                     msgInner.setStoreTimestamp(result.getPrepareMessage().getStoreTimestamp());
+                    //将消息再次储存到commitLog中
                     RemotingCommand sendResult = sendFinalMessage(msgInner);
                     //如果发送成功了，就删除prepareMessage
                     if (sendResult.getCode() == ResponseCode.SUCCESS) {
+                        //删除prepare消息，不是真正删除，而是把消息储存到RMQ_SYS_TRANS_OP_HALF_TOPIC队列
                         this.brokerController.getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
                     }
                     return sendResult;
